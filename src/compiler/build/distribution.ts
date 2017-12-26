@@ -57,7 +57,7 @@ export function validatePackageJson(config: BuildConfig, diagnostics: Diagnostic
     err.messageText = `package.json "collection" property is required when generating a distribution and must be set to: ${collection}`;
   }
 
-  if (typeof config.namespace !== 'string' || config.namespace.toLowerCase().trim() === 'app') {
+  if (typeof config.namespace !== 'string' || config.fsNamespace === 'app') {
     const err = buildWarn(diagnostics);
     err.header = `config warning`;
     err.messageText = `When generating a distribution it is recommended to choose a unique namespace, which can be updated using the "namespace" config property within the stencil.config.js file.`;

@@ -4,7 +4,7 @@ import { generatePreamble } from '../../util';
 import { mockLogger, mockStencilSystem } from '../../../testing/mocks';
 
 import * as core from '../app-core';
-import { getAppFileName, getAppPublicPath } from '../app-file-naming';
+import { getAppPublicPath } from '../app-file-naming';
 
 
 describe('app-core', () => {
@@ -20,22 +20,17 @@ describe('app-core', () => {
     ctx = {};
   });
 
-  describe('getAppFileName', () => {
-    it('returns the lower-cased namespace', () => {
-      config.namespace = 'BarnAcleBobSBigBoaTs';
-      expect(getAppFileName(config)).toEqual('barnaclebobsbigboats');
-    });
-  });
-
   describe('getAppPublicPath', () => {
     it('concatinates public path and namespace', () => {
       config.namespace = 'WillyWendLeSWeTWasaBi';
+      config.fsNamespace = config.namespace.toLowerCase();
       config.publicPath = 'Projects/Ionic/Stencil';
       expect(getAppPublicPath(config)).toEqual('Projects/Ionic/Stencil/willywendleswetwasabi/');
     });
 
     it('handles windows paths', () => {
       config.namespace = 'WillyWendLeSWeTWasaBi';
+      config.fsNamespace = config.namespace.toLowerCase();
       config.publicPath = 'Projects\\Ionic\\Stencil';
       expect(getAppPublicPath(config)).toEqual('Projects/Ionic/Stencil/willywendleswetwasabi/');
     });
@@ -44,6 +39,7 @@ describe('app-core', () => {
   describe('wrapCoreJs', () => {
     beforeEach(() => {
       config.namespace = 'WillyWendLeSWeTWasaBi';
+      config.fsNamespace = config.namespace.toLowerCase();
       config.publicPath = 'Projects\\Ionic\\Stencil';
     });
 

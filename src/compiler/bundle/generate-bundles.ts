@@ -231,19 +231,30 @@ function minifyBundleJs(config: BuildConfig, ctx: BuildContext, jsText: string, 
 }
 
 
-export function getBundleId(config: BuildConfig, manifestBundle: ManifestBundle, modeName: string, jsText: string, isScopedCss: boolean, sourceTarget: SourceTarget) {
+export function getBundleId(config: BuildConfig, manifestBundle: ManifestBundle, modeName: string, jsText: string, isScopedCss?: boolean, sourceTarget?: SourceTarget) {
   if (config.hashFileNames) {
     // create style id from hashing the content
-    return config.sys.generateContentHash(jsText, config.hashedFileNameLength);
+    return getBundleIdHashed(config, jsText);
   }
 
-  const firstTagInBundle = manifestBundle.moduleFiles.map(m => m.cmpMeta.tagNameMeta).sort()[0];
+  const tags = manifestBundle.moduleFiles.map(m => m.cmpMeta.tagNameMeta);
+  return getBundleIdDev(tags, modeName, isScopedCss, sourceTarget);
+}
+
+
+export function getBundleIdHashed(config: BuildConfig, jsText: string) {
+  return config.sys.generateContentHash(jsText, config.hashedFileNameLength);
+}
+
+
+export function getBundleIdDev(tags: string[], modeName: string, isScopedCss: boolean, sourceTarget?: SourceTarget) {
   let bundleId: string;
+  tags = tags.sort();
 
   if (modeName === DEFAULT_STYLE_MODE || !modeName) {
-    bundleId = firstTagInBundle;
+    bundleId = tags[0];
   } else {
-    bundleId = `${firstTagInBundle}.${modeName}`;
+    bundleId = `${tags[0]}.${modeName}`;
   }
 
   return `${bundleId}${isScopedCss ? '.sc' : ''}${sourceTarget === 'es5' ? '.es5' : ''}`;

@@ -65,12 +65,12 @@ export async function generateLegacyModule(config: BuildConfig, rollupBundle: Ro
   const { code } = await rollupBundle.generate({
     format: 'cjs',
     banner: generatePreamble(config),
-    intro: `(function(f){` +
-              `"object"===typeof exports&&"undefined"!==typeof module?` +
-              `f(exports):` +
-              `${config.namespace}.loadComponents(f,"${getBundleIdPlaceholder()}")` +
+    intro: `(function(global, factory){` +
+              `"object" === typeof exports && "undefined" !== typeof module ? ` +
+              `factory(exports) : ` +
+              `global.${config.namespace}.loadComponents(factory, "${getBundleIdPlaceholder()}")` +
            `})` +
-           `(function(exports){\n` +
+           `(this, function(exports){\n` +
            `"use strict";\n` +
            `var h = ${config.namespace}.h;`,
             // module content w/ commonjs exports object

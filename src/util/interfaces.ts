@@ -1,6 +1,6 @@
 import { CssClassMap } from './jsx-interfaces';
 export { CssClassMap } from './jsx-interfaces';
-import { ENCAPSULATION, MEMBER_TYPE, PROP_TYPE, PRIORITY, RUNTIME_ERROR } from './constants';
+import { ENCAPSULATION, MEMBER_TYPE, PROP_TYPE, RUNTIME_ERROR } from './constants';
 
 
 export interface CoreContext {
@@ -247,7 +247,6 @@ export interface AppRegistry {
 
 export interface Bundle {
   components: string[];
-  priority?: number;
 }
 
 
@@ -257,7 +256,6 @@ export interface ManifestBundle {
   moduleFiles: ModuleFile[];
   compiledModuleText?: string;
   compiledModuleLegacyText?: string;
-  priority?: PRIORITY;
 }
 
 
@@ -1249,7 +1247,9 @@ export interface StencilSystem {
   };
   semver?: {
     gt: (a: string, b: string, loose?: boolean) => boolean;
+    gte: (a: string, b: string, loose?: boolean) => boolean;
     lt: (a: string, b: string, loose?: boolean) => boolean;
+    lte: (a: string, b: string, loose?: boolean) => boolean;
   };
   typescript?: any;
   url?: {
@@ -1453,7 +1453,7 @@ export interface StyleData {
 
 export interface PropData {
   name?: string;
-  type?: 'boolean'|'number'|'string'|'any';
+  type?: 'Boolean'|'Number'|'String'|'Any';
   mutable?: boolean;
 }
 

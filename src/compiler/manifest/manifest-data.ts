@@ -1,7 +1,7 @@
 import { AssetsMeta, BuildConfig, BuildContext, BuildResults, Bundle, BundleData,
   ComponentMeta, ComponentData, EventData, EventMeta, Manifest, ManifestData, ModuleFile, ListenerData,
   ListenMeta, PropChangeData, PropChangeMeta, PropData, StyleData, StyleMeta } from '../../util/interfaces';
-import { COLLECTION_MANIFEST_FILE_NAME, ENCAPSULATION, MEMBER_TYPE, PROP_TYPE, PRIORITY } from '../../util/constants';
+import { COLLECTION_MANIFEST_FILE_NAME, ENCAPSULATION, MEMBER_TYPE, PROP_TYPE } from '../../util/constants';
 import { normalizePath } from '../util';
 
 
@@ -380,16 +380,16 @@ function serializeProps(cmpData: ComponentData, cmpMeta: ComponentMeta) {
       };
 
       if (member.propType === PROP_TYPE.Boolean) {
-        propData.type = 'boolean';
+        propData.type = 'Boolean';
 
       } else if (member.propType === PROP_TYPE.Number) {
-        propData.type = 'number';
+        propData.type = 'Number';
 
       } else if (member.propType === PROP_TYPE.String) {
-        propData.type = 'string';
+        propData.type = 'String';
 
       } else if (member.propType === PROP_TYPE.Any) {
-        propData.type = 'any';
+        propData.type = 'Any';
       }
 
       if (member.memberType === MEMBER_TYPE.PropMutable) {
@@ -419,16 +419,20 @@ function parseProps(config: BuildConfig, manifest: Manifest, cmpData: ComponentD
       cmpMeta.membersMeta[propData.name].memberType = MEMBER_TYPE.Prop;
     }
 
-    if (propData.type === 'boolean') {
+    // the standard is the first character of the type is capitalized
+    // however, lowercase and normalize for good measure
+    const type = typeof propData.type === 'string' ? propData.type.toLowerCase().trim() : null;
+
+    if (type === 'boolean') {
       cmpMeta.membersMeta[propData.name].propType = PROP_TYPE.Boolean;
 
-    } else if (propData.type === 'number') {
+    } else if (type === 'number') {
       cmpMeta.membersMeta[propData.name].propType = PROP_TYPE.Number;
 
-    } else if (propData.type === 'string') {
+    } else if (type === 'string') {
       cmpMeta.membersMeta[propData.name].propType = PROP_TYPE.String;
 
-    } else if (propData.type === 'any') {
+    } else if (type === 'any') {
       cmpMeta.membersMeta[propData.name].propType = PROP_TYPE.Any;
 
     } else if (!manifest.compiler || !manifest.compiler.version || config.sys.semver.lt(manifest.compiler.version, '0.0.6-23')) {
@@ -831,10 +835,6 @@ export function serializeBundles(manifestData: ManifestData, manifest: Manifest)
       components: bundle.components.map(tag => tag.toLowerCase()).sort()
     };
 
-    if (bundle.priority === PRIORITY.Low) {
-      bundleData.priority = 'low';
-    }
-
     manifestData.bundles.push(bundleData);
   });
 
@@ -861,10 +861,6 @@ export function parseBundles(manifestData: ManifestData, manifest: Manifest) {
     const bundle: Bundle = {
       components: bundleData.components.sort()
     };
-
-    if (bundleData.priority === 'low') {
-      bundle.priority = PRIORITY.Low;
-    }
 
     manifest.bundles.push(bundle);
   });

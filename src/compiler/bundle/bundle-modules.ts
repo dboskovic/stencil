@@ -144,6 +144,6 @@ export function bundledComponentContainsChangedFile(config: BuildConfig, bundles
 }
 
 
-function getModuleBundleCacheKey(components: string[]) {
-  return 'bundle:' + components.map(c => c.toLocaleLowerCase().trim()).sort().join('.');
+export function getModuleBundleCacheKey(components: string[]) {
+  return `bundle:${components.map(c => c.toLocaleLowerCase().trim()).sort().join('.')}`;
 }

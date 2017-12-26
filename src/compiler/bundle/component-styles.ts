@@ -88,7 +88,7 @@ export function setStyleText(config: BuildConfig, ctx: BuildContext, cmpMeta: Co
 }
 
 
-function cleanStyle(style: string) {
+export function cleanStyle(style: string) {
   return style.replace(/\r\n|\r|\n/g, `\\n`)
               .replace(/\"/g, `\\"`)
               .replace(/\@/g, `\\@`);

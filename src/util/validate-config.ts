@@ -23,7 +23,7 @@ export function validateBuildConfig(config: BuildConfig, setEnvVariables?: boole
     throw new Error('config.sys required');
   }
 
-  validateGlobalNamespace(config);
+  validateNamespace(config);
 
   const path = config.sys.path;
 
@@ -253,7 +253,7 @@ export function validateBuildConfig(config: BuildConfig, setEnvVariables?: boole
 }
 
 
-function validateGlobalNamespace(config: BuildConfig) {
+export function validateNamespace(config: BuildConfig) {
   if (typeof config.namespace !== 'string') {
     config.namespace = DEFAULT_NAMESPACE;
   }
@@ -277,14 +277,16 @@ function validateGlobalNamespace(config: BuildConfig) {
     throw new Error(`Namespace "${config.namespace}" cannot have a dash for the last character`);
   }
 
-  // convert to PascalCase
-  // this is the same namespace that gets put on "window"
-  config.namespace = dashToPascalCase(config.namespace);
-
   // the file system namespace is the one
   // used in filenames and seen in the url
   if (typeof config.fsNamespace !== 'string') {
     config.fsNamespace = config.namespace.toLowerCase();
+  }
+
+  if (config.namespace.includes('-')) {
+    // convert to PascalCase
+    // this is the same namespace that gets put on "window"
+    config.namespace = dashToPascalCase(config.namespace);
   }
 }
 
