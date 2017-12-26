@@ -2,7 +2,7 @@ import { convertValueToLiteral, getImportNameMapFromStyleMeta, StyleImport } fro
 import { ComponentMeta, ModuleFiles } from '../../../util/interfaces';
 import { DEFAULT_STYLE_MODE, ENCAPSULATION } from '../../../util/constants';
 import { getStylePlaceholder, getStyleIdPlaceholder } from '../../../util/data-serialize';
-import { formatComponentConstructorProperties } from '../../../util/data-serialize';
+import { formatComponentConstructorEvents, formatComponentConstructorProperties } from '../../../util/data-serialize';
 import * as ts from 'typescript';
 
 
@@ -71,8 +71,9 @@ export function addStaticMeta(cmpMeta: ComponentMeta) {
     staticMembers.properties = convertValueToLiteral(propertiesMeta);
   }
 
-  if (cmpMeta.eventsMeta && cmpMeta.eventsMeta.length > 0) {
-    staticMembers.events = convertValueToLiteral(cmpMeta.eventsMeta);
+  const eventsMeta = formatComponentConstructorEvents(cmpMeta.eventsMeta);
+  if (eventsMeta && eventsMeta.length > 0) {
+    staticMembers.events = convertValueToLiteral(eventsMeta);
   }
 
   if (cmpMeta.stylesMeta && Object.keys(cmpMeta.stylesMeta).length > 0) {
@@ -105,6 +106,8 @@ export interface ConstructorComponentMeta {
   encapsulation?: ts.Expression;
   host?: ts.Expression;
   properties?: ts.Expression;
+  didChange?: ts.Expression;
+  willChange?: ts.Expression;
   events?: ts.Expression;
   style?: ts.Expression;
   styleMode?: ts.Expression;

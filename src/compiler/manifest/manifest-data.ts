@@ -1,6 +1,6 @@
 import { AssetsMeta, BuildConfig, BuildContext, BuildResults, Bundle, BundleData,
   ComponentMeta, ComponentData, EventData, EventMeta, Manifest, ManifestData, ModuleFile, ListenerData,
-  ListenMeta, PropChangeData, PropChangeMeta, PropData, StyleData, StyleMeta } from '../../util/interfaces';
+  ListenMeta, PropData, StyleData, StyleMeta } from '../../util/interfaces';
 import { COLLECTION_MANIFEST_FILE_NAME, ENCAPSULATION, MEMBER_TYPE, PROP_TYPE } from '../../util/constants';
 import { normalizePath } from '../util';
 
@@ -147,8 +147,6 @@ export function serializeComponent(config: BuildConfig, manifestDir: string, mod
   serializeStyles(config, moduleFile, compiledComponentRelativeDirPath, cmpData, cmpMeta);
   serializeAssetsDir(config, moduleFile, compiledComponentRelativeDirPath, cmpData, cmpMeta);
   serializeProps(cmpData, cmpMeta);
-  serializePropsWillChange(cmpData, cmpMeta);
-  serializePropsDidChange(cmpData, cmpMeta);
   serializeStates(cmpData, cmpMeta);
   serializeListeners(cmpData, cmpMeta);
   serializeMethods(cmpData, cmpMeta);
@@ -177,8 +175,6 @@ export function parseComponentDataToModuleFile(config: BuildConfig, manifest: Ma
   parseStyles(config, manifestDir, cmpData, cmpMeta);
   parseAssetsDir(config, manifestDir, cmpData, cmpMeta);
   parseProps(config, manifest, cmpData, cmpMeta);
-  parsePropsWillChange(cmpData, cmpMeta);
-  parsePropsDidChange(cmpData, cmpMeta);
   parseStates(cmpData, cmpMeta);
   parseListeners(cmpData, cmpMeta);
   parseMethods(cmpData, cmpMeta);
@@ -188,6 +184,10 @@ export function parseComponentDataToModuleFile(config: BuildConfig, manifest: Ma
   parseEvents(cmpData, cmpMeta);
   parseHost(cmpData, cmpMeta);
   parseEncapsulation(cmpData, cmpMeta);
+
+  // DEPRECATED: 2017-12-27
+  parseWillChangeDeprecated(cmpData, cmpMeta);
+  parseDidChangeDeprecated(cmpData, cmpMeta);
 
   return moduleFile;
 }
@@ -370,29 +370,29 @@ function serializeProps(cmpData: ComponentData, cmpMeta: ComponentMeta) {
   if (!cmpMeta.membersMeta) return;
 
   Object.keys(cmpMeta.membersMeta).sort(nameSort).forEach(memberName => {
-    const member = cmpMeta.membersMeta[memberName];
+    const memberMeta = cmpMeta.membersMeta[memberName];
 
-    if (member.memberType === MEMBER_TYPE.Prop || member.memberType === MEMBER_TYPE.PropMutable) {
+    if (memberMeta.memberType === MEMBER_TYPE.Prop || memberMeta.memberType === MEMBER_TYPE.PropMutable) {
       cmpData.props = cmpData.props || [];
 
       const propData: PropData = {
         name: memberName
       };
 
-      if (member.propType === PROP_TYPE.Boolean) {
-        propData.type = 'Boolean';
+      if (memberMeta.propType === PROP_TYPE.Boolean) {
+        propData.type = BOOLEAN_KEY;
 
-      } else if (member.propType === PROP_TYPE.Number) {
-        propData.type = 'Number';
+      } else if (memberMeta.propType === PROP_TYPE.Number) {
+        propData.type = NUMBER_KEY;
 
-      } else if (member.propType === PROP_TYPE.String) {
-        propData.type = 'String';
+      } else if (memberMeta.propType === PROP_TYPE.String) {
+        propData.type = STRING_KEY;
 
-      } else if (member.propType === PROP_TYPE.Any) {
-        propData.type = 'Any';
+      } else if (memberMeta.propType === PROP_TYPE.Any) {
+        propData.type = ANY_KEY;
       }
 
-      if (member.memberType === MEMBER_TYPE.PropMutable) {
+      if (memberMeta.memberType === MEMBER_TYPE.PropMutable) {
         propData.mutable = true;
       }
 
@@ -423,16 +423,16 @@ function parseProps(config: BuildConfig, manifest: Manifest, cmpData: ComponentD
     // however, lowercase and normalize for good measure
     const type = typeof propData.type === 'string' ? propData.type.toLowerCase().trim() : null;
 
-    if (type === 'boolean') {
+    if (type === BOOLEAN_KEY.toLowerCase()) {
       cmpMeta.membersMeta[propData.name].propType = PROP_TYPE.Boolean;
 
-    } else if (type === 'number') {
+    } else if (type === NUMBER_KEY.toLowerCase()) {
       cmpMeta.membersMeta[propData.name].propType = PROP_TYPE.Number;
 
-    } else if (type === 'string') {
+    } else if (type === STRING_KEY.toLowerCase()) {
       cmpMeta.membersMeta[propData.name].propType = PROP_TYPE.String;
 
-    } else if (type === 'any') {
+    } else if (type === ANY_KEY.toLowerCase()) {
       cmpMeta.membersMeta[propData.name].propType = PROP_TYPE.Any;
 
     } else if (!manifest.compiler || !manifest.compiler.version || config.sys.semver.lt(manifest.compiler.version, '0.0.6-23')) {
@@ -447,64 +447,44 @@ function parseProps(config: BuildConfig, manifest: Manifest, cmpData: ComponentD
 }
 
 
-function serializePropsWillChange(cmpData: ComponentData, cmpMeta: ComponentMeta) {
-  if (invalidArrayData(cmpMeta.propsWillChangeMeta)) {
-    return;
-  }
-
-  cmpData.propsWillChange = cmpMeta.propsWillChangeMeta.map(propWillChangeMeta => {
-    const propWillChangeData: PropChangeData = {
-      name: propWillChangeMeta[0],
-      method: propWillChangeMeta[1]
-    };
-    return propWillChangeData;
-  });
-}
-
-function parsePropsWillChange(cmpData: ComponentData, cmpMeta: ComponentMeta) {
+function parseWillChangeDeprecated(cmpData: any, cmpMeta: ComponentMeta) {
+  // DEPRECATED: 2017-12-27
+  // previous way of storing change, 0.1.0 and below
   const propWillChangeData = cmpData.propsWillChange;
 
-  if (invalidArrayData(propWillChangeData)) {
+  if (invalidArrayData(propWillChangeData) || !cmpMeta.membersMeta) {
     return;
   }
 
-  cmpMeta.propsWillChangeMeta = propWillChangeData.map(propWillChangeData => {
-    const propWillChangeMeta: PropChangeMeta = [
-      propWillChangeData.name,
-      propWillChangeData.method
-    ];
-    return propWillChangeMeta;
+  propWillChangeData.forEach((willChangeData: any) => {
+    const propName = willChangeData.name;
+    const methodName = willChangeData.method;
+
+    if (cmpMeta.membersMeta[propName]) {
+      cmpMeta.membersMeta[propName].willChangeMethodNames = cmpMeta.membersMeta[propName].willChangeMethodNames || [];
+      cmpMeta.membersMeta[propName].willChangeMethodNames.push(methodName);
+    }
   });
 }
 
 
-function serializePropsDidChange(cmpData: ComponentData, cmpMeta: ComponentMeta) {
-  if (invalidArrayData(cmpMeta.propsDidChangeMeta)) {
-    return;
-  }
-
-  cmpData.propsDidChange = cmpMeta.propsDidChangeMeta.map(propDidChangeMeta => {
-    const propDidChangeData: PropChangeData = {
-      name: propDidChangeMeta[0],
-      method: propDidChangeMeta[1]
-    };
-    return propDidChangeData;
-  });
-}
-
-function parsePropsDidChange(cmpData: ComponentData, cmpMeta: ComponentMeta) {
+function parseDidChangeDeprecated(cmpData: any, cmpMeta: ComponentMeta) {
+  // DEPRECATED: 2017-12-27
+  // previous way of storing change, 0.1.0 and below
   const propDidChangeData = cmpData.propsDidChange;
 
-  if (invalidArrayData(propDidChangeData)) {
+  if (invalidArrayData(propDidChangeData) || !cmpMeta.membersMeta) {
     return;
   }
 
-  cmpMeta.propsDidChangeMeta = propDidChangeData.map(propDidChangeData => {
-    const propDidChangeMeta: PropChangeMeta = [
-      propDidChangeData.name,
-      propDidChangeData.method
-    ];
-    return propDidChangeMeta;
+  propDidChangeData.forEach((didChangeData: any) => {
+    const propName = didChangeData.name;
+    const methodName = didChangeData.method;
+
+    if (cmpMeta.membersMeta[propName]) {
+      cmpMeta.membersMeta[propName].didChangeMethodNames = cmpMeta.membersMeta[propName].didChangeMethodNames || [];
+      cmpMeta.membersMeta[propName].didChangeMethodNames.push(methodName);
+    }
   });
 }
 
@@ -896,3 +876,7 @@ function nameSort(a: string, b: string) {
 }
 
 export const COLLECTION_DEPENDENCIES_DIR = 'dependencies';
+export const BOOLEAN_KEY = 'Boolean';
+export const NUMBER_KEY = 'Number';
+export const STRING_KEY = 'String';
+export const ANY_KEY = 'Any';

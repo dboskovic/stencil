@@ -191,19 +191,6 @@ export interface ComponentEventData {
 }
 
 
-export interface PropChangeMeta {
-  /**
-   * prop name
-   */
-  [0]?: string;
-
-  /**
-   * fn name
-   */
-  [1]?: string;
-}
-
-
 export interface Manifest {
   manifestName?: string;
   modulesFiles?: ModuleFile[];
@@ -680,6 +667,8 @@ export interface MemberMeta {
   attribType?: AttributeTypeInfo;
   ctrlId?: string;
   jsdoc?: JSDoc;
+  willChangeMethodNames?: string[];
+  didChangeMethodNames?: string[];
 }
 
 
@@ -692,13 +681,10 @@ export interface ComponentConstructor {
   is?: string;
   properties?: ComponentConstructorProperties;
   events?: ComponentConstructorEvent[];
-  willChange?: PropChangeMeta[];
-  didChange?: PropChangeMeta[];
   host?: any;
   style?: string;
   styleMode?: string;
   encapsulation?: Encapsulation;
-
 }
 
 
@@ -719,9 +705,14 @@ export interface ComponentConstructorProperty {
   mutable?: boolean;
   state?: boolean;
   type?: PropertyType;
+  willChange?: ComponentConstructorPropertyChange[];
+  didChange?: ComponentConstructorPropertyChange[];
 }
 
 export type PropertyType = StringConstructor | BooleanConstructor | NumberConstructor | 'Any';
+
+
+export type ComponentConstructorPropertyChange = string;
 
 
 export interface ComponentConstructorEvent {
@@ -816,8 +807,6 @@ export interface ComponentMeta {
   membersMeta?: MembersMeta;
   eventsMeta?: EventMeta[];
   listenersMeta?: ListenMeta[];
-  propsWillChangeMeta?: PropChangeMeta[];
-  propsDidChangeMeta?: PropChangeMeta[];
   hostMeta?: HostMeta;
   encapsulation?: ENCAPSULATION;
   assetsDirsMeta?: AssetsMeta[];
@@ -1425,8 +1414,6 @@ export interface ComponentData {
   componentClass?: string;
   styles?: StylesData;
   props?: PropData[];
-  propsWillChange?: PropChangeData[];
-  propsDidChange?: PropChangeData[];
   states?: StateData[];
   listeners?: ListenerData[];
   methods?: MethodData[];
@@ -1455,11 +1442,8 @@ export interface PropData {
   name?: string;
   type?: 'Boolean'|'Number'|'String'|'Any';
   mutable?: boolean;
-}
-
-export interface PropChangeData {
-  name: string;
-  method: string;
+  willChange?: string[];
+  didChange?: string[];
 }
 
 export interface StateData {
