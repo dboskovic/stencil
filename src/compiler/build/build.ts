@@ -11,7 +11,6 @@ import { generateIndexHtml } from '../html/generate-index-html';
 import { genereateReadmes } from '../docs/generate-readmes';
 import { generateServiceWorker } from '../service-worker/generate-sw';
 import { generateAppManifest } from '../manifest/generate-manifest';
-import { getAppFileName } from '../app/app-file-naming';
 import { initIndexHtml } from '../html/init-index-html';
 import { prerenderApp } from '../prerender/prerender-app';
 import { setupWatcher } from './watch';
@@ -61,7 +60,7 @@ export function build(config: BuildConfig, context?: any) {
   }
 
   // keep track of how long the entire build process takes
-  const timeSpan = config.logger.createTimeSpan(`${ctx.isRebuild ? 'rebuild' : 'build'}, ${getAppFileName(config)}, ${config.devMode ? 'dev' : 'prod'} mode, started`);
+  const timeSpan = config.logger.createTimeSpan(`${ctx.isRebuild ? 'rebuild' : 'build'}, ${config.fsNamespace}, ${config.devMode ? 'dev' : 'prod'} mode, started`);
 
   // begin the build
   return Promise.resolve().then(() => {

@@ -1,5 +1,5 @@
 import { BuildConfig, BuildContext } from '../../util/interfaces';
-import { getAppFileName } from '../app/app-file-naming';
+import { getLoaderFileName } from '../app/app-file-naming';
 
 
 export function inlineLoaderScript(config: BuildConfig, ctx: BuildContext, doc: Document) {
@@ -13,7 +13,7 @@ export function inlineLoaderScript(config: BuildConfig, ctx: BuildContext, doc: 
   if (loaderExternalSrcUrl.charAt(loaderExternalSrcUrl.length - 1) !== '/') {
     loaderExternalSrcUrl += '/';
   }
-  loaderExternalSrcUrl += getAppFileName(config) + '.js';
+  loaderExternalSrcUrl += getLoaderFileName(config);
 
   // remove the app loader script url request
   const removedLoader = removeExternalLoaderScript(doc, loaderExternalSrcUrl);

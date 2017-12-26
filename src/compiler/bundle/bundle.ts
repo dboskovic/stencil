@@ -19,10 +19,15 @@ export function bundle(config: BuildConfig, ctx: BuildContext) {
     config.logger.debug(`bundle, distDir: ${config.distDir}`);
   }
 
+  const timeSpan = config.logger.createTimeSpan(`bundle started`, true);
+
+  // get all of the manifest bundles
   ctx.manifestBundles = getManifestBundles(ctx.manifest.modulesFiles, ctx.manifest.bundles, ctx.diagnostics);
 
+  // check they're good to go
   ctx.manifestBundles = validateBundleModules(ctx.manifestBundles);
 
+  // always consistently sort them
   ctx.manifestBundles = sortBundles(ctx.manifestBundles);
 
   // kick off style and module bundling at the same time
@@ -32,15 +37,15 @@ export function bundle(config: BuildConfig, ctx: BuildContext) {
 
   ]).then(() => {
     // both styles and modules are done bundling
-    // generate the actual files to write
-    generateBundles(config, ctx, ctx.manifestBundles, 'es2015');
-
-    if (config.es5Fallback) {
-      generateBundles(config, ctx, ctx.manifestBundles, 'es5');
-    }
+    // inject the styles into the modules and
+    // generate each of the output bundles
+    generateBundles(config, ctx, ctx.manifestBundles);
 
   }).catch(err => {
     catchError(ctx.diagnostics, err);
+
+  }).then(() => {
+    timeSpan.finish(`bundle finished`);
   });
 }
 
@@ -170,7 +175,6 @@ export function findPrimaryEncapsulation(moduleFiles: ModuleFile[]) {
 function createManifestBundle(moduleFiles: ModuleFile[], priority: PRIORITY) {
   const manifestBundle: ManifestBundle = {
     moduleFiles: moduleFiles,
-    compiledModeStyles: [],
     compiledModuleText: '',
     priority: priority
   };

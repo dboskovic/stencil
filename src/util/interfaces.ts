@@ -26,7 +26,7 @@ export interface CommonJsImporter {
 
 export interface AppGlobal {
   components?: LoadComponentRegistry[];
-  loadComponents?: (importFn: CommonJsImporter) => void;
+  loadComponents?: (importFn: CommonJsImporter, bundleId: string) => void;
   h?: Function;
 }
 
@@ -252,21 +252,12 @@ export interface Bundle {
 
 
 export interface ManifestBundle {
+  bundleId?: string;
   cacheKey?: string;
   moduleFiles: ModuleFile[];
-  compiledModeStyles?: CompiledModeStyles[];
   compiledModuleText?: string;
+  compiledModuleLegacyText?: string;
   priority?: PRIORITY;
-}
-
-
-export interface CompiledModeStyles {
-  tag?: string;
-  modeName?: string;
-  styleOrder?: number;
-  unscopedStyles?: string;
-  scopedStyles?: string;
-  writeFile?: boolean;
 }
 
 
@@ -327,6 +318,7 @@ export interface BuildConfig {
   logLevel?: 'error'|'warn'|'info'|'debug'|string;
   es5Fallback?: boolean;
   namespace?: string;
+  fsNamespace?: string;
   globalScript?: string;
   globalStyle?: string[];
   srcDir?: string;
@@ -509,13 +501,10 @@ export interface BuildContext {
   moduleFiles?: ModuleFiles;
   manifestBundles?: ManifestBundle[];
   jsFiles?: FilesMap;
-  cssFiles?: FilesMap;
-  compiledFileCache?: ModuleBundles;
+  compiledFileCache?: FilesMap;
+  rollupCache?: { [cacheKey: string]: any };
   moduleBundleOutputs?: ModuleBundles;
-  styleSassUnscopedOutputs?: ModuleBundles;
-  styleSassScopedOutputs?: ModuleBundles;
-  styleCssUnscopedOutputs?: ModuleBundles;
-  styleCssScopedOutputs?: ModuleBundles;
+  moduleBundleLegacyOutputs?: ModuleBundles;
   filesToWrite?: FilesMap;
   dependentManifests?: {[collectionName: string]: Manifest};
   appFiles?: {
@@ -869,6 +858,8 @@ export interface StyleMeta {
   originalComponentPaths?: string[];
   originalCollectionPaths?: string[];
   styleStr?: string;
+  compiledStyleText?: string;
+  compiledStyleTextScoped?: string;
 }
 
 
@@ -1240,26 +1231,9 @@ export interface StencilSystem {
   remove?(path: string): Promise<void>;
   rollup?: {
     rollup: {
-      (config: { entry?: any, input?: string; external?: Function; plugins?: any[]; treeshake?: boolean; onwarn?: Function; }): Promise<{
-        imports: any,
-        exports: any,
-        modules: any,
-        generate: {(config: {
-          format?: string;
-          banner?: string;
-          footer?: string;
-          exports?: string;
-          external?: string[];
-          globals?: {[key: string]: any};
-          moduleName?: string;
-          plugins?: any;
-        }): Promise<{
-          code: string;
-          map: any;
-        }>}
-      }>;
+      (config: RollupInputConfig): Promise<RollupBundle>;
     };
-    plugins: { [pluginName: string]: any };
+    plugins: RollupPlugins;
   };
   sass?: {
     render(
@@ -1289,6 +1263,45 @@ export interface StencilSystem {
   };
   watch?(paths: string | string[], opts?: any): FSWatcher;
   workbox?: Workbox;
+}
+
+
+export interface RollupInputConfig {
+  entry?: any;
+  input?: string;
+  cache?: any;
+  external?: Function;
+  plugins?: any[];
+  onwarn?: Function;
+}
+
+export interface RollupBundle {
+  generate: {(config: RollupGenerateConfig): Promise<RollupGenerateResults>};
+}
+
+
+export interface RollupGenerateConfig {
+  format: 'es' | 'cjs';
+  intro?: string;
+  outro?: string;
+  banner?: string;
+  footer?: string;
+  exports?: string;
+  external?: string[];
+  globals?: {[key: string]: any};
+  moduleName?: string;
+  strict?: boolean;
+}
+
+
+export interface RollupGenerateResults {
+  code: string;
+  map: any;
+}
+
+
+export interface RollupPlugins {
+  [pluginName: string]: any;
 }
 
 

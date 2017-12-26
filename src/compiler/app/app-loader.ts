@@ -59,7 +59,7 @@ export async function generateLoader(
       }
     }
 
-    loaderContent = generatePreamble(config) + loaderContent;
+    loaderContent = generatePreamble(config) + '\n' + loaderContent;
 
     ctx.appFiles.loader = loaderContent;
 

@@ -1,7 +1,6 @@
-import { BundleIds, ComponentMeta, ComponentConstructorProperty, ComponentConstructorProperties, ComponentRegistry, CompiledModeStyles, EventMeta, ListenMeta,
-  LoadComponentRegistry, MemberMeta, MembersMeta, ModuleFile, PropChangeMeta, StylesMeta } from './interfaces';
-import { DEFAULT_STYLE_MODE, ENCAPSULATION, MEMBER_TYPE, PROP_TYPE } from '../util/constants';
-import { wrapComponentImports } from '../compiler/bundle/component-modules';
+import { BundleIds, ComponentMeta, ComponentConstructorProperty, ComponentConstructorProperties, ComponentRegistry, EventMeta, ListenMeta,
+  LoadComponentRegistry, MemberMeta, MembersMeta, PropChangeMeta, StylesMeta } from './interfaces';
+import { ENCAPSULATION, MEMBER_TYPE, PROP_TYPE } from '../util/constants';
 
 
 export function formatComponentLoader(cmpMeta: ComponentMeta): LoadComponentRegistry {
@@ -136,85 +135,6 @@ export function formatComponentRegistry(registry: ComponentRegistry) {
     }
     return null;
   }).filter(c => c);
-}
-
-
-export function formatLoadComponents(
-    namespace: string,
-    moduleId: string,
-    moduleBundleOutput: string,
-    moduleFiles: ModuleFile[]
-  ) {
-
-  // ensure we've got a standard order of the components
-  moduleFiles = moduleFiles.sort((a, b) => {
-    if (a.cmpMeta.tagNameMeta < b.cmpMeta.tagNameMeta) return -1;
-    if (a.cmpMeta.tagNameMeta > b.cmpMeta.tagNameMeta) return 1;
-    return 0;
-  });
-
-  const componentMetaStr = moduleFiles.map(moduleFile => {
-    return formatComponentMeta(moduleFile.cmpMeta);
-  }).join(',\n');
-
-  // wrap our component code with our own iife
-  moduleBundleOutput = wrapComponentImports(moduleBundleOutput);
-
-  return [
-    `${getWindowNamespace(namespace)}.loadComponents(\n`,
-
-      `/**** module id (dev mode) ****/`,
-      `"${moduleId}",\n`,
-
-      `/**** component modules ****/`,
-      `${moduleBundleOutput},\n`,
-
-      `${componentMetaStr}`,
-
-    `);`
-  ].join('\n');
-}
-
-
-export function formatLoadStyles(namespace: string, bundleStyles: CompiledModeStyles[], scoped: boolean) {
-  const args: string[] = [];
-
-  bundleStyles = bundleStyles.sort((a, b) => {
-    if (a.tag < b.tag) return -1;
-    if (a.tag > b.tag) return 1;
-    return 0;
-  });
-
-  bundleStyles.forEach(bundleStyle => {
-    const styles = (scoped ? bundleStyle.scopedStyles : bundleStyle.unscopedStyles).replace(/\r\n|\r|\n/g, `\\n`).replace(/\"/g, `\\"`).trim();
-
-    if (styles.length > 0) {
-      // arg EVEN
-      let styleId = bundleStyle.tag;
-      if (bundleStyle.modeName !== DEFAULT_STYLE_MODE) {
-        styleId += '_' + bundleStyle.modeName;
-      }
-      args.push(styleId);
-
-      // arg ODD
-      args.push(styles);
-    }
-  });
-
-  if (args.length < 2) {
-    return '';
-  }
-
-  return `${getWindowNamespace(namespace)}.loadStyles("${args.join(`","`)}");`;
-}
-
-
-export function getWindowNamespace(namespace: string) {
-  if (namespace.includes('-')) {
-    return `window['${namespace}']`;
-  }
-
-  return namespace;
 }
 
 
@@ -507,15 +427,25 @@ function trimFalsyDataStr(d: string[]) {
 
 
 export function getJsPathBundlePlaceholder(tagName: string) {
-  return `/**jspath:${tagName}**/`;
+  return `/***:js-path:${tagName}:***/`;
 }
 
 
 export function getStylePlaceholder(tagName: string) {
-  return `/**style:${tagName}**/`;
+  return `/***:style:${tagName}:***/`;
 }
 
 
 export function getStyleIdPlaceholder(tagName: string) {
-  return `/**style-id:${tagName}**/`;
+  return `/***:style-id:${tagName}:***/`;
+}
+
+
+export function getBundleIdPlaceholder() {
+  return `/***:bundle-id:***/`;
+}
+
+
+export function replaceBundleIdPlaceholder(jsText: string, bundleId: string) {
+  return jsText.replace(getBundleIdPlaceholder(), `${bundleId}`);
 }

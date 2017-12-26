@@ -6,7 +6,6 @@ import { createQueueServer } from './queue-server';
 import { createRendererPatch } from '../core/renderer/patch';
 import { dashToPascalCase } from '../util/helpers';
 import { ENCAPSULATION, DEFAULT_STYLE_MODE, MEMBER_TYPE, RUNTIME_ERROR } from '../util/constants';
-import { getAppFileName } from '../compiler/app/app-file-naming';
 import { h } from '../core/renderer/h';
 import { noop } from '../util/helpers';
 import { proxyController } from '../core/instance/proxy';
@@ -57,7 +56,7 @@ export function createPlatformServer(
   const globalDefined: { [tagName: string]: boolean } = win.$definedComponents = win.$definedComponents || {};
 
   const appWwwDir = config.wwwDir;
-  const appBuildDir = config.sys.path.join(config.buildDir, getAppFileName(config));
+  const appBuildDir = config.sys.path.join(config.buildDir, config.fsNamespace);
   Context.publicPath = appBuildDir;
 
   // create the sandboxed context with a new instance of a V8 Context

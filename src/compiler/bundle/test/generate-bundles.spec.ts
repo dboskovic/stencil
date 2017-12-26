@@ -47,7 +47,7 @@ describe('generate-bundles', () => {
       const moduleFiles: ModuleFile[] = [
         { cmpMeta: { bundleIds: {} } }
       ];
-      setBundleModeIds(moduleFiles, null, 'bundle-id', 'es2015');
+      setBundleModeIds(moduleFiles, null, 'bundle-id');
       expect(moduleFiles[0].cmpMeta.bundleIds[DEFAULT_STYLE_MODE].es2015).toBe('bundle-id');
     });
 
@@ -55,7 +55,7 @@ describe('generate-bundles', () => {
       const moduleFiles: ModuleFile[] = [
         { cmpMeta: { bundleIds: {} } }
       ];
-      setBundleModeIds(moduleFiles, 'ios', 'bundle-id', 'es2015');
+      setBundleModeIds(moduleFiles, 'ios', 'bundle-id');
       expect(moduleFiles[0].cmpMeta.bundleIds.ios.es2015).toBe('bundle-id');
     });
 
