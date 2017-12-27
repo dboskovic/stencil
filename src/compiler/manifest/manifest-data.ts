@@ -447,12 +447,12 @@ function parseProps(config: BuildConfig, manifest: Manifest, cmpData: ComponentD
 }
 
 
-function parseWillChangeDeprecated(cmpData: any, cmpMeta: ComponentMeta) {
+export function parseWillChangeDeprecated(cmpData: any, cmpMeta: ComponentMeta) {
   // DEPRECATED: 2017-12-27
   // previous way of storing change, 0.1.0 and below
   const propWillChangeData = cmpData.propsWillChange;
 
-  if (invalidArrayData(propWillChangeData) || !cmpMeta.membersMeta) {
+  if (invalidArrayData(propWillChangeData)) {
     return;
   }
 
@@ -460,20 +460,21 @@ function parseWillChangeDeprecated(cmpData: any, cmpMeta: ComponentMeta) {
     const propName = willChangeData.name;
     const methodName = willChangeData.method;
 
-    if (cmpMeta.membersMeta[propName]) {
-      cmpMeta.membersMeta[propName].willChangeMethodNames = cmpMeta.membersMeta[propName].willChangeMethodNames || [];
-      cmpMeta.membersMeta[propName].willChangeMethodNames.push(methodName);
-    }
+    cmpMeta.membersMeta = cmpMeta.membersMeta || {};
+    cmpMeta.membersMeta[propName] = cmpMeta.membersMeta[propName] || {};
+
+    cmpMeta.membersMeta[propName].willChangeMethodNames = cmpMeta.membersMeta[propName].willChangeMethodNames || [];
+    cmpMeta.membersMeta[propName].willChangeMethodNames.push(methodName);
   });
 }
 
 
-function parseDidChangeDeprecated(cmpData: any, cmpMeta: ComponentMeta) {
+export function parseDidChangeDeprecated(cmpData: any, cmpMeta: ComponentMeta) {
   // DEPRECATED: 2017-12-27
   // previous way of storing change, 0.1.0 and below
   const propDidChangeData = cmpData.propsDidChange;
 
-  if (invalidArrayData(propDidChangeData) || !cmpMeta.membersMeta) {
+  if (invalidArrayData(propDidChangeData)) {
     return;
   }
 
@@ -481,10 +482,11 @@ function parseDidChangeDeprecated(cmpData: any, cmpMeta: ComponentMeta) {
     const propName = didChangeData.name;
     const methodName = didChangeData.method;
 
-    if (cmpMeta.membersMeta[propName]) {
-      cmpMeta.membersMeta[propName].didChangeMethodNames = cmpMeta.membersMeta[propName].didChangeMethodNames || [];
-      cmpMeta.membersMeta[propName].didChangeMethodNames.push(methodName);
-    }
+    cmpMeta.membersMeta = cmpMeta.membersMeta || {};
+    cmpMeta.membersMeta[propName] = cmpMeta.membersMeta[propName] || {};
+
+    cmpMeta.membersMeta[propName].didChangeMethodNames = cmpMeta.membersMeta[propName].didChangeMethodNames || [];
+    cmpMeta.membersMeta[propName].didChangeMethodNames.push(methodName);
   });
 }
 

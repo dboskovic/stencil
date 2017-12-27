@@ -1,9 +1,9 @@
+import { addBundleExportsFromTags, addComponentExport } from '../add-component-exports';
 import { addStaticMeta } from '../add-component-metadata';
 import { BuildConfig, ComponentMeta, ManifestBundle } from '../../../../util/interfaces';
 import { dashToPascalCase } from '../../../../util/helpers';
 import { normalizePath } from '../../../util';
 import * as ts from 'typescript';
-import { addBundleExportsFromTags, addComponentExport } from '../add-component-exports';
 
 
 export default function upgradeFromMetadata(config: BuildConfig, manifestBundles: ManifestBundle[]) {

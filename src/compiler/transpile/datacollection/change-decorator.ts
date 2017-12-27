@@ -6,11 +6,11 @@ import * as ts from 'typescript';
 export function getChangeDecoratorMeta(classNode: ts.ClassDeclaration, cmpMeta: ComponentMeta) {
   const methods = classNode.members.filter(isMethodWithDecorators);
 
-  getChangeMetaByName(methods, cmpMeta, 'PropWillChange', 'willChange');
-  getChangeMetaByName(methods, cmpMeta, 'PropDidChange', 'didChange');
+  getChangeMetaByName(methods, cmpMeta, 'PropWillChange');
+  getChangeMetaByName(methods, cmpMeta, 'PropDidChange');
 }
 
-function getChangeMetaByName(methods: ts.ClassElement[], cmpMeta: ComponentMeta, decoratorName: string, memberChangeName: 'willChange' | 'didChange') {
+function getChangeMetaByName(methods: ts.ClassElement[], cmpMeta: ComponentMeta, decoratorName: string) {
   methods.forEach(({decorators, name}) => {
     decorators
       .filter(isDecoratorNamed(decoratorName))
@@ -19,10 +19,25 @@ function getChangeMetaByName(methods: ts.ClassElement[], cmpMeta: ComponentMeta,
         if (propName) {
           cmpMeta.membersMeta = cmpMeta.membersMeta || {};
           cmpMeta.membersMeta[propName] = cmpMeta.membersMeta[propName] || {};
-          (cmpMeta.membersMeta[propName] as any)[memberChangeName] = (cmpMeta.membersMeta[propName] as any)[memberChangeName] || [];
-          (cmpMeta.membersMeta[propName] as any)[memberChangeName].push(name.getText());
-          (cmpMeta.membersMeta[propName] as any)[memberChangeName].sort();
+
+          if (decoratorName === 'PropWillChange') {
+            updateWillChange(cmpMeta, propName, name);
+          }
+
+          if (decoratorName === 'PropDidChange') {
+            updateDidChange(cmpMeta, propName, name);
+          }
         }
       });
   });
+}
+
+function updateWillChange(cmpMeta: ComponentMeta, propName: string, decoratorData: ts.PropertyName) {
+  cmpMeta.membersMeta[propName].willChangeMethodNames = cmpMeta.membersMeta[propName].willChangeMethodNames || [];
+  cmpMeta.membersMeta[propName].willChangeMethodNames.push(decoratorData.getText());
+}
+
+function updateDidChange(cmpMeta: ComponentMeta, propName: string, decoratorData: ts.PropertyName) {
+  cmpMeta.membersMeta[propName].didChangeMethodNames = cmpMeta.membersMeta[propName].didChangeMethodNames || [];
+  cmpMeta.membersMeta[propName].didChangeMethodNames.push(decoratorData.getText());
 }

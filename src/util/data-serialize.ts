@@ -6,12 +6,12 @@ import { ENCAPSULATION, MEMBER_TYPE, PROP_TYPE } from '../util/constants';
 
 export function formatComponentLoader(cmpMeta: ComponentMeta): LoadComponentRegistry {
   const d: any[] = [
-    cmpMeta.tagNameMeta,
-    formatBundleIds(cmpMeta.bundleIds),
-    formatHasStyles(cmpMeta.stylesMeta),
-    formatProps(cmpMeta.membersMeta),
-    formatEncapsulation(cmpMeta.encapsulation),
-    formatListeners(cmpMeta.listenersMeta)
+    /* 0 */ cmpMeta.tagNameMeta,
+    /* 1 */ formatBundleIds(cmpMeta.bundleIds),
+    /* 2 */ formatHasStyles(cmpMeta.stylesMeta),
+    /* 3 */ formatMembers(cmpMeta.membersMeta),
+    /* 4 */ formatEncapsulation(cmpMeta.encapsulation),
+    /* 5 */ formatListeners(cmpMeta.listenersMeta)
   ];
 
   return <any>trimFalsyData(d);
@@ -60,7 +60,7 @@ export function formatHasStyles(stylesMeta: StylesMeta) {
 }
 
 
-function formatProps(membersMeta: MembersMeta) {
+function formatMembers(membersMeta: MembersMeta) {
   if (!membersMeta) {
     return 0;
   }
@@ -168,8 +168,7 @@ export function formatComponentConstructorProperties(membersMeta: MembersMeta) {
   const properties: ComponentConstructorProperties = {};
 
   memberNames.forEach(memberName => {
-    const property = formatComponentConstructorProperty(membersMeta[memberName]);
-    properties[memberName] = property;
+    properties[memberName] = formatComponentConstructorProperty(membersMeta[memberName]);
   });
 
   return properties;
@@ -211,6 +210,14 @@ function formatComponentConstructorProperty(memberMeta: MemberMeta) {
     if (memberMeta.memberType === MEMBER_TYPE.PropMutable) {
       property.mutable = true;
     }
+  }
+
+  if (memberMeta.willChangeMethodNames && memberMeta.willChangeMethodNames.length > 0) {
+    property.willChange = memberMeta.willChangeMethodNames.slice();
+  }
+
+  if (memberMeta.didChangeMethodNames && memberMeta.didChangeMethodNames.length > 0) {
+    property.didChange = memberMeta.didChangeMethodNames.slice();
   }
 
   return property;
