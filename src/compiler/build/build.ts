@@ -91,9 +91,6 @@ export async function build(config: BuildConfig, context?: any) {
     // build index file and service worker
     await generateIndexHtml(config, ctx);
 
-    // prerender that app
-    await prerenderApp(config, ctx);
-
     // generate each of the readmes
     await genereateReadmes(config, ctx);
 
@@ -102,6 +99,9 @@ export async function build(config: BuildConfig, context?: any) {
 
     // generate the service worker
     await generateServiceWorker(config, ctx);
+
+    // prerender that app
+    await prerenderApp(config, ctx);
 
     // setup watcher if need be
     await setupWatcher(config, ctx);

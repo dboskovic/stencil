@@ -1,5 +1,5 @@
 import { BANNER } from '../util/constants';
-import { BuildConfig, BuildContext, Diagnostic, FilesMap, SourceTarget, StencilSystem } from '../util/interfaces';
+import { BuildConfig, BuildContext, Diagnostic, FilesMap, StencilSystem } from '../util/interfaces';
 
 
 export function getBuildContext(ctx?: BuildContext) {
@@ -253,7 +253,7 @@ export function isWebDevFile(filePath: string) {
 const WEB_DEV_EXT = ['js', 'jsx', 'html', 'htm', 'css', 'scss', 'sass'];
 
 
-export function generatePreamble(config: BuildConfig, sourceTarget?: SourceTarget) {
+export function generatePreamble(config: BuildConfig) {
   let preamble: string[] = [];
 
   if (config.preamble) {
@@ -271,7 +271,7 @@ export function generatePreamble(config: BuildConfig, sourceTarget?: SourceTarge
     return preamble.join('\n');
   }
 
-  return `/*! ${BANNER}${sourceTarget === 'es5' ? ' (es5)' : ''} */`;
+  return `/*! ${BANNER} */`;
 }
 
 

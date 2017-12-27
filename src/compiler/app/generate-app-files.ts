@@ -54,7 +54,7 @@ export async function generateAppFiles(config: BuildConfig, ctx: BuildContext) {
     buildConditionalsEs5.cssVarShim = true;
     buildConditionalsEs5.ssrClientSide = true;
 
-    const coreFilenameEs5 = await generateCore(config, ctx, globalJsContentsEs5, buildConditionalsEs5, 'es5');
+    const coreFilenameEs5 = await generateCore(config, ctx, globalJsContentsEs5, buildConditionalsEs5);
     appRegistry.corePolyfilled = coreFilenameEs5;
 
   } else if (config.generateWWW) {

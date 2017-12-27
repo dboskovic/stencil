@@ -55,7 +55,7 @@ export function getNodeSys(distRootDir: string, logger: Logger) {
     throw new Error(`unable to resolve "typescript" from: ${distRootDir}`);
   }
 
-  const sysUtil = require('./sys-util');
+  const sysUtil = require(path.join(__dirname, '../bin/sys-util'));
 
   const sys: StencilSystem = {
 
@@ -197,7 +197,7 @@ export function getNodeSys(distRootDir: string, logger: Logger) {
     },
 
     minifyCss(input) {
-      const CleanCSS = require('./clean-css').cleanCss;
+      const CleanCSS = require(path.join(__dirname, '../bin/clean-css')).cleanCss;
       const result = new CleanCSS().minify(input);
       const diagnostics: Diagnostic[] = [];
 

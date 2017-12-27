@@ -214,7 +214,7 @@ function minifyBundleJs(config: BuildConfig, ctx: BuildContext, jsText: string, 
     opts.output.preserve_line = true;
   }
 
-  opts.output.preamble = generatePreamble(config, sourceTarget);
+  opts.output.preamble = generatePreamble(config);
 
   const minifyJsResults = config.sys.minifyJs(jsText, opts);
 
