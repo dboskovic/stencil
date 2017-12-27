@@ -1,4 +1,4 @@
-import { Diagnostic, Logger, LoggerTimeSpan, PrintLine } from '../interfaces';
+import { Diagnostic, Logger, LoggerTimeSpan, PrintLine } from '../../util/interfaces';
 import { Chalk } from 'chalk';
 import * as path from 'path';
 
@@ -12,7 +12,7 @@ export class NodeLogger implements Logger {
     this.process = opts.process;
     this.level = opts.level;
 
-    const sysUtil = require(path.join(__dirname, '../bin/sys-util'));
+    const sysUtil = require(path.join(__dirname, './sys-util.js'));
     this.chalk = sysUtil.chalk;
   }
 

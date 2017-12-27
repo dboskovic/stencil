@@ -1,10 +1,10 @@
-import { BuildConfig, Diagnostic, Logger, PackageJsonData, StencilSystem } from '../interfaces';
+import { Diagnostic, PackageJsonData, StencilSystem } from '../../util/interfaces';
 import { createContext, runInContext } from './node-context';
 import { createDom } from './node-dom';
 import { normalizePath } from '../../compiler/util';
 
 
-export function getNodeSys(distRootDir: string, logger: Logger) {
+export function sys(packageDir: string) {
   const fs = require('fs');
   const path = require('path');
   const coreClientFileCache: {[key: string]: string} = {};
@@ -43,19 +43,19 @@ export function getNodeSys(distRootDir: string, logger: Logger) {
 
   let packageJsonData: PackageJsonData;
   try {
-    packageJsonData = require(path.join(distRootDir, 'package.json'));
+    packageJsonData = require(path.join(packageDir, 'package.json'));
   } catch (e) {
-    throw new Error(`unable to resolve "package.json" from: ${distRootDir}`);
+    throw new Error(`unable to resolve "package.json" from: ${packageDir}`);
   }
 
   let typescriptPackageJson: PackageJsonData;
   try {
-    typescriptPackageJson = require(resolveModule(distRootDir, 'typescript')) as PackageJsonData;
+    typescriptPackageJson = require(resolveModule(packageDir, 'typescript')) as PackageJsonData;
   } catch (e) {
-    throw new Error(`unable to resolve "typescript" from: ${distRootDir}`);
+    throw new Error(`unable to resolve "typescript" from: ${packageDir}`);
   }
 
-  const sysUtil = require(path.join(__dirname, '../bin/sys-util'));
+  const sysUtil = require(path.join(__dirname, './sys-util.js'));
 
   const sys: StencilSystem = {
 
@@ -133,7 +133,7 @@ export function getNodeSys(distRootDir: string, logger: Logger) {
     },
 
     getClientCoreFile(opts) {
-      const filePath = path.join(distRootDir, 'client', opts.staticName);
+      const filePath = path.join(packageDir, 'client', opts.staticName);
 
       return new Promise((resolve, reject) => {
         if (coreClientFileCache[filePath]) {
@@ -164,40 +164,12 @@ export function getNodeSys(distRootDir: string, logger: Logger) {
       });
     },
 
-    loadConfigFile(configPath) {
-      let config: BuildConfig;
-      let configFileData: any;
-
-      try {
-        delete require.cache[require.resolve(configPath)];
-        configFileData = require(configPath);
-
-        if (!configFileData.config) {
-          logger.error(`Invalid Stencil "${configPath}" configuration file. Missing "config" property.`);
-          return null;
-        }
-
-        config = configFileData.config;
-        config.configPath = configPath;
-
-      } catch (e) {
-        logger.error(`Error reading Stencil "${configPath}" configuration file.`);
-        return null;
-      }
-
-      if (!config.rootDir) {
-        config.rootDir = path.dirname(configPath);
-      }
-
-      return config;
-    },
-
     isGlob(str: string) {
       return sysUtil.isGlob(str);
     },
 
     minifyCss(input) {
-      const CleanCSS = require(path.join(__dirname, '../bin/clean-css')).cleanCss;
+      const CleanCSS = require(path.join(__dirname, './clean-css.js')).cleanCss;
       const result = new CleanCSS().minify(input);
       const diagnostics: Diagnostic[] = [];
 
