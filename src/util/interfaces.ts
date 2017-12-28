@@ -1079,7 +1079,7 @@ export interface PlatformApi {
   isPrerender?: boolean;
   isServer?: boolean;
   loadBundle: (cmpMeta: ComponentMeta, modeName: string, cb: Function) => void;
-  onAppLoad?: (rootElm: HostElement, stylesMap: FilesMap, failureDiagnostic?: Diagnostic) => void;
+  onAppLoad?: (rootElm: HostElement, styles: string[], failureDiagnostic?: Diagnostic) => void;
   onError: (err: Error, type?: RUNTIME_ERROR, elm?: HostElement, appFailure?: boolean) => void;
   propConnect: (ctrlTag: string) => PropConnect;
   queue: QueueApi;

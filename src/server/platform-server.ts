@@ -1,7 +1,7 @@
+import { AppGlobal, BuildConfig, BuildContext, CommonJsModuleImports,
+  ComponentMeta, ComponentRegistry, CoreContext, Diagnostic, DomApi,
+  HostElement, PlatformApi } from '../util/interfaces';
 import { assignHostContentSlots } from '../core/renderer/slot';
-import { BuildConfig, BuildContext, ComponentMeta, ComponentRegistry,
-  CoreContext, Diagnostic, DomApi, FilesMap, HostElement,
-  PlatformApi, AppGlobal, CommonJsModuleImports } from '../util/interfaces';
 import { createQueueServer } from './queue-server';
 import { createRendererPatch } from '../core/renderer/patch';
 import { ENCAPSULATION, DEFAULT_STYLE_MODE, MEMBER_TYPE, RUNTIME_ERROR } from '../util/constants';
@@ -21,7 +21,7 @@ export function createPlatformServer(
   ctx?: BuildContext
 ): PlatformApi {
   const registry: ComponentRegistry = { 'html': {} };
-  const stylesMap: FilesMap = {};
+  const styles: string[] = [];
   const controllerComponents: {[tag: string]: HostElement} = {};
 
   // init build context
@@ -101,7 +101,7 @@ export function createPlatformServer(
     if (rootElm._hasLoaded || failureDiagnostic) {
       // the root node has loaded
       // and there are no css files still loading
-      plt.onAppLoad && plt.onAppLoad(rootElm, stylesMap, failureDiagnostic);
+      plt.onAppLoad && plt.onAppLoad(rootElm, styles, failureDiagnostic);
     }
   }
 
@@ -155,6 +155,10 @@ export function createPlatformServer(
         if (cmpMeta) {
           // connect the component's constructor to its metadata
           cmpMeta.componentConstructor = moduleImports[pascalCasedTagName];
+
+          if (cmpMeta.componentConstructor.style) {
+            styles.push(cmpMeta.componentConstructor.style);
+          }
         }
       });
 
