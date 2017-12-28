@@ -6,7 +6,7 @@ import { loadConfig } from '../util/load-config';
 export function ssrMiddleware(middlewareConfig: MiddlewareConfig) {
   // load up the config
   const path = require('path');
-  const nodeSys = require(path.join('../sys/node/index.js'));
+  const nodeSys = require(path.join(__dirname, '../sys/node/index.js'));
   const config = loadConfig(nodeSys.sys, middlewareConfig.config);
 
   // create the renderer

@@ -150,18 +150,7 @@ export function createPlatformServer(
     // synchronous in nodejs
     if (!cmpMeta.componentConstructor) {
       try {
-        const bundleId: string = (cmpMeta.bundleIds[modeName] || cmpMeta.bundleIds[DEFAULT_STYLE_MODE] || (cmpMeta.bundleIds as any)).es5;
-
-        let requestBundleId = bundleId;
-        if (cmpMeta.encapsulation === ENCAPSULATION.ScopedCss || cmpMeta.encapsulation === ENCAPSULATION.ShadowDom) {
-          requestBundleId += '.sc';
-        }
-        requestBundleId += '.js';
-
-        const jsFilePath = config.sys.path.join(appBuildDir, requestBundleId);
-        const module = require(jsFilePath);
-
-        cmpMeta.componentConstructor = module[dashToPascalCase(cmpMeta.tagNameMeta)];
+        cmpMeta.componentConstructor = getModuleBundle(config, cmpMeta, modeName, appBuildDir);
 
       } catch (e) {
         onError(e, RUNTIME_ERROR.LoadBundleError, null, true);
@@ -235,4 +224,31 @@ export function createPlatformServer(
   }
 
   return plt;
+}
+
+
+export function getBundleId(cmpMeta: ComponentMeta, modeName: string) {
+  const bundleArr: string[] = (cmpMeta.bundleIds[modeName] || cmpMeta.bundleIds[DEFAULT_STYLE_MODE] || (cmpMeta.bundleIds)) as any;
+
+  // index 1 is the es5/umd module
+  return bundleArr[1];
+}
+
+
+export function getBundleFilename(cmpMeta: ComponentMeta, bundleId: string) {
+  if (cmpMeta.encapsulation === ENCAPSULATION.ScopedCss || cmpMeta.encapsulation === ENCAPSULATION.ShadowDom) {
+    bundleId += '.sc';
+  }
+  bundleId += '.js';
+  return bundleId;
+}
+
+
+export function getModuleBundle(config: BuildConfig, cmpMeta: ComponentMeta, modeName: string, appBuildDir: string) {
+  const bundleId = getBundleId(cmpMeta, modeName);
+  const fileName = getBundleFilename(cmpMeta, bundleId);
+  const jsFilePath = config.sys.path.join(appBuildDir, fileName);
+  const moduleBundle = require(jsFilePath);
+
+  return moduleBundle[dashToPascalCase(cmpMeta.tagNameMeta)];
 }
