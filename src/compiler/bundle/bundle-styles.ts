@@ -33,9 +33,9 @@ export function bundleStyles(config: BuildConfig, ctx: BuildContext, manifestBun
 
 
 function bundleComponentStyles(config: BuildConfig, ctx: BuildContext, manifestBundle: ManifestBundle) {
-  return manifestBundle.moduleFiles.filter(m => m.cmpMeta).map(moduleFile => {
+  return Promise.all(manifestBundle.moduleFiles.filter(m => m.cmpMeta).map(moduleFile => {
     return generateComponentStyles(config, ctx, moduleFile);
-  });
+  }));
 }
 
 

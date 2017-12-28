@@ -7,13 +7,13 @@ import { scopeComponentCss } from '../css/scope-css';
 export function generateComponentStyles(config: BuildConfig, ctx: BuildContext, moduleFile: ModuleFile) {
   moduleFile.cmpMeta.stylesMeta = moduleFile.cmpMeta.stylesMeta || {};
 
-  return Object.keys(moduleFile.cmpMeta.stylesMeta).map(async modeName => {
+  return Promise.all(Object.keys(moduleFile.cmpMeta.stylesMeta).map(async modeName => {
     // compile each style mode's sass/css
     const styles = await compileStyles(config, ctx, moduleFile, moduleFile.cmpMeta.stylesMeta[modeName]);
 
     // format and set the styles for use later
-    setStyleText(config, ctx,  moduleFile.cmpMeta, moduleFile.cmpMeta.stylesMeta[modeName], styles);
-  });
+    return setStyleText(config, ctx,  moduleFile.cmpMeta, moduleFile.cmpMeta.stylesMeta[modeName], styles);
+  }));
 }
 
 
