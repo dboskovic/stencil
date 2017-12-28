@@ -382,12 +382,12 @@ export interface CopyTask {
 
 
 export interface RenderOptions {
-  collapseWhitespace?: boolean;
-  inlineStyles?: boolean;
-  inlineAssetsMaxSize?: number;
-  removeUnusedStyles?: boolean;
-  inlineLoaderScript?: boolean;
   canonicalLink?: boolean;
+  collapseWhitespace?: boolean;
+  inlineAssetsMaxSize?: number;
+  inlineLoaderScript?: boolean;
+  inlineStyles?: boolean;
+  removeUnusedStyles?: boolean;
   ssrIds?: boolean;
 }
 
