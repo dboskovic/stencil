@@ -28,6 +28,16 @@ export function getLoaderFileName(config: BuildConfig) {
 }
 
 
+export function getLoaderWWW(config: BuildConfig) {
+  return pathJoin(config, config.buildDir, getLoaderFileName(config));
+}
+
+
+export function getLoaderDist(config: BuildConfig) {
+  return pathJoin(config, config.distDir, getLoaderFileName(config));
+}
+
+
 export function getGlobalFileName(config: BuildConfig) {
   return `${config.fsNamespace}.${GLOBAL_NAME}.js`;
 }
