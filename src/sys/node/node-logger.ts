@@ -8,8 +8,8 @@ export class NodeLogger implements Logger {
   private process: NodeJS.Process;
   private chalk: Chalk;
 
-  constructor(opts: { level?: string, process: NodeJS.Process }) {
-    this.process = opts.process;
+  constructor(opts: { level?: string, process?: NodeJS.Process } = {}) {
+    this.process = opts.process || process;
     this.level = opts.level;
 
     const sysUtil = require(path.join(__dirname, './sys-util.js'));

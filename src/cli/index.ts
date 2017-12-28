@@ -26,7 +26,7 @@ export function run(process: NodeJS.Process, sys: StencilSystem, logger: Logger,
     return process.exit(0);
   }
 
-  if (minNodeVersion && !argv.skipNodeCheck && sys.semver.lt(minNodeVersion, process.version)) {
+  if (minNodeVersion && !argv.skipNodeCheck && sys.semver.lt(process.version, minNodeVersion)) {
     logger.error(`Your Node.js version is ${process.version}. Stencil requires a minimum of version ${minNodeVersion}. Please update to the latest Node LTS version.`);
     return process.exit(1);
   }

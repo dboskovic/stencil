@@ -7,7 +7,9 @@ var path = require('path');
 var cli = require(path.join(__dirname, '../cli/index.js'));
 var compiler = require(path.join(__dirname, '../compiler/index.js'));
 var nodeSys = require(path.join(__dirname, '../sys/node/index.js'));
-var sys = nodeSys.sys
-var logger = new nodeSys.NodeLogger();
 
-cli.run(process, sys, logger, compiler, '6.11.0');
+var sys = new nodeSys.NodeSystem();
+var logger = new nodeSys.NodeLogger();
+var minNodeVersion = '6.11.0';
+
+cli.run(process, sys, logger, compiler, minNodeVersion);

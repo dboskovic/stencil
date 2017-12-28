@@ -3,7 +3,7 @@ import { BuildConfig, StencilSystem } from './interfaces';
 
 export function loadConfig(sys: StencilSystem, config: string | BuildConfig) {
   if (!config || Array.isArray(config) || typeof config === 'function' || typeof config === 'number' || typeof config === 'boolean') {
-    throw (`Invalid config: ${config}. Config must be either a file path or a config object.`);
+    throw new Error(`Invalid config: ${config}. Config must be either a file path or a config object.`);
   }
 
   if (typeof config === 'string') {
@@ -11,6 +11,9 @@ export function loadConfig(sys: StencilSystem, config: string | BuildConfig) {
   }
 
   // looks like it's already a build config object
+  if (!config.sys) {
+    config.sys = sys;
+  }
   return (config as BuildConfig);
 }
 
@@ -19,7 +22,7 @@ export function loadConfigFile(sys: StencilSystem, configPath: string) {
   let config: BuildConfig;
 
   if (!sys.path.isAbsolute(configPath)) {
-    throw (`Stencil configuration file "${configPath}" must be an absolute path.`);
+    throw new Error(`Stencil configuration file "${configPath}" must be an absolute path.`);
   }
 
   try {
@@ -33,7 +36,7 @@ export function loadConfigFile(sys: StencilSystem, configPath: string) {
     // the passed in config was a string, so it's probably a path to the config we need to load
     const configFileData = require(configPath);
     if (!configFileData.config) {
-      throw (`Invalid Stencil configuration file "${configPath}". Missing "config" property.`);
+      throw new Error(`Invalid Stencil configuration file "${configPath}". Missing "config" property.`);
     }
 
     config = configFileData.config;
@@ -44,7 +47,11 @@ export function loadConfigFile(sys: StencilSystem, configPath: string) {
     }
 
   } catch (e) {
-    throw (`Error reading Stencil configuration file "${configPath}". ` + e);
+    throw new Error(`Error reading Stencil configuration file "${configPath}". ` + e);
+  }
+
+  if (!config.sys) {
+    config.sys = sys;
   }
 
   return config;
