@@ -155,10 +155,6 @@ export function createPlatformServer(
         if (cmpMeta) {
           // connect the component's constructor to its metadata
           cmpMeta.componentConstructor = moduleImports[pascalCasedTagName];
-
-          if (cmpMeta.componentConstructor.style) {
-            styles.push(cmpMeta.componentConstructor.style);
-          }
         }
       });
 
@@ -191,6 +187,13 @@ export function createPlatformServer(
 
     cb();
   }
+
+
+  plt.attachStyles = function attachStyles(_domApi, cmpConstructor, _modeName, _elm) {
+    if (cmpConstructor.style) {
+      styles.push(cmpConstructor.style);
+    }
+  };
 
 
   function runGlobalScripts() {
