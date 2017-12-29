@@ -1,7 +1,7 @@
 import { BuildConfig, BuildContext, BuildConditionals } from '../../util/interfaces';
 import { buildCoreContent } from './build-core-content';
+import { generatePreamble, pathJoin } from '../util';
 import { getAppPublicPath, getAppDistDir, getAppWWWBuildDir, getCoreFilename } from './app-file-naming';
-import { pathJoin } from '../util';
 
 
 export async function generateCore(config: BuildConfig, ctx: BuildContext, globalJsContent: string, buildConditionals: BuildConditionals) {
@@ -60,6 +60,7 @@ export function wrapCoreJs(config: BuildConfig, jsContent: string) {
   const publicPath = getAppPublicPath(config);
 
   const output = [
+    generatePreamble(config) + '\n',
     `(function(Context,appNamespace,hydratedCssClass,publicPath){`,
     `"use strict";\n`,
     `var s=document.querySelector("script[data-namespace='${APP_NAMESPACE_PLACEHOLDER}']");`,
