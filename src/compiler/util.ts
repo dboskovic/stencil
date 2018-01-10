@@ -2,10 +2,11 @@ import { BANNER } from '../util/constants';
 import { BuildConfig, BuildContext, Diagnostic, FilesMap, StencilSystem } from '../util/interfaces';
 
 
-export function getBuildContext(ctx?: BuildContext) {
+export function getBuildContext(config: BuildConfig, ctx?: BuildContext) {
   // create the build context if it doesn't exist
   ctx = ctx || {};
 
+  ctx.fs = ctx.fs || config.sys.createFileSystem();
   ctx.diagnostics = ctx.diagnostics || [];
   ctx.manifest = ctx.manifest || {};
   ctx.filesToWrite = ctx.filesToWrite || {};

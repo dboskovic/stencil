@@ -19,11 +19,11 @@ import { validatePrerenderConfig } from '../prerender/validate-prerender-config'
 import { validateServiceWorkerConfig } from '../service-worker/validate-sw-config';
 
 
-export async function build(config: BuildConfig, context?: any) {
+export async function build(config: BuildConfig, ctx?: any) {
   // create the build context if it doesn't exist
   // the buid context is the same object used for all builds and rebuilds
   // ctx is where stuff is cached for fast in-memory lookups later
-  const ctx = getBuildContext(context);
+  ctx = getBuildContext(config, ctx);
 
   if (!ctx.isRebuild) {
     config.logger.info(config.logger.cyan(`${config.sys.compiler.name} v${config.sys.compiler.version}`));

@@ -1,6 +1,7 @@
 import { BuildConfig, Diagnostic, PackageJsonData, StencilSystem } from '../../util/interfaces';
 import { createContext, runInContext } from './node-context';
 import { createDom } from './node-dom';
+import { NodeFileSystem } from './node-fs';
 import { normalizePath } from '../../compiler/util';
 
 
@@ -62,6 +63,10 @@ export class NodeSystem implements StencilSystem {
 
   get createDom() {
     return createDom;
+  }
+
+  createFileSystem() {
+    return new NodeFileSystem(this.sysUtil.fsExtra, this.nodePath);
   }
 
   emptyDir(dir: any) {

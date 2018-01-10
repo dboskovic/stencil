@@ -19,7 +19,7 @@ export function createRenderer(config: BuildConfig, ctx?: BuildContext) {
   ctx = ctx || {};
 
   // init the buid context
-  getBuildContext(ctx);
+  getBuildContext(config, ctx);
 
   // load the app global file into the context
   loadAppGlobal(config, ctx);

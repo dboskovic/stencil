@@ -8,7 +8,7 @@ import { isConfigValid } from '../build/build';
 
 
 export function docs(config: BuildConfig) {
-  const ctx = getBuildContext({});
+  const ctx = getBuildContext(config, {});
   resetBuildContext(ctx);
 
   config.logger.info(config.logger.cyan(`${config.sys.compiler.name} v${config.sys.compiler.version}`));

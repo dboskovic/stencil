@@ -6,8 +6,11 @@ import { createPlatformServer } from '../server/platform-server';
 import { createRendererPatch } from '../core/renderer/patch';
 import { initHostElement } from '../core/instance/init-host-element';
 import { initComponentInstance } from '../core/instance/init-component-instance';
+import { MockFsExtra } from './mock-fs';
+import { NodeFileSystem } from '../sys/node/node-fs';
 import { noop } from '../util/helpers';
 import { validateBuildConfig } from '../util/validate-config';
+import * as path from 'path';
 
 
 export function mockPlatform(win?: any, domApi?: DomApi) {
@@ -97,6 +100,11 @@ export function mockStencilSystem() {
     },
 
     createDom: mockCreateDom,
+
+    createFileSystem() {
+      const fsExtra = new MockFsExtra();
+      return new NodeFileSystem(fsExtra, path);
+    },
 
     emptyDir: function() {
       return new Promise(resolve => {

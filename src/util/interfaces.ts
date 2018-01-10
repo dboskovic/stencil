@@ -479,6 +479,7 @@ export interface BuildResults {
 
 
 export interface BuildContext {
+  fs?: FileSystem;
   moduleFiles?: ModuleFiles;
   jsFiles?: FilesMap;
   compiledFileCache?: FilesMap;
@@ -1147,6 +1148,7 @@ export interface StencilSystem {
     serialize(): string;
     destroy(): void;
   };
+  createFileSystem?(): FileSystem;
   emptyDir?(dir: string): Promise<void>;
   ensureDir?(dir: string): Promise<void>;
   ensureDirSync?(dir: string): void;
@@ -1231,6 +1233,30 @@ export interface StencilSystem {
   };
   watch?(paths: string | string[], opts?: any): FSWatcher;
   workbox?: Workbox;
+}
+
+
+export interface FileSystem {
+  access(filePath: string): Promise<boolean>;
+  accessSync(filePath: string): boolean;
+  copy(src: string, dest: string, opts?: {
+    filter?: (src: string, dest?: string) => boolean;
+  }): Promise<void>;
+  emptyDir?(dirPath: string): Promise<void>;
+  ensureDir?(dirPath: string): Promise<void>;
+  ensureDirSync?(dirPath: string): void;
+  ensureFile?(dirPath: string): Promise<void>;
+  readdir(filePath: string): Promise<string[]>;
+  readFile(filePath: string): Promise<string>;
+  readFileSync(filePath: string): string;
+  stat(path: string): Promise<{ isFile: boolean; isDirectory: boolean; }>;
+  statSync(path: string): { isFile: boolean; isDirectory: boolean; };
+  writeFile(filePath: string, content: string): Promise<void>;
+  writeFileSync(filePath: string, content: string): void;
+
+  commit(): Promise<string[]>;
+  clearDirCache(dirPath: string): void;
+  clearFileCache(filePath: string): void;
 }
 
 
