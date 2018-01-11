@@ -1,6 +1,6 @@
 import addComponentMetadata from './transformers/add-component-metadata';
-import { BuildConfig, BuildContext, Diagnostic, ModuleFile, ModuleFiles, TranspileModulesResults, TranspileResults } from '../../util/interfaces';
-import { buildError, catchError, isSassFile, normalizePath, hasError } from '../util';
+import { BuildConfig, BuildContext, Diagnostic, ModuleFiles, TranspileResults } from '../../util/interfaces';
+import { hasError, isTsFile, isDtsFile, pathJoin } from '../util';
 import { COMPONENTS_DTS } from '../build/distribution';
 import { gatherMetadata } from './datacollection/index';
 import { generateComponentTypesFile } from './create-component-types';
@@ -12,38 +12,6 @@ import { normalizeStyles } from './normalize-styles';
 import { removeDecorators } from './transformers/remove-decorators';
 import { removeImports } from './transformers/remove-imports';
 import * as ts from 'typescript';
-
-
-export async function transpileFiles(config: BuildConfig, ctx: BuildContext, moduleFiles: ModuleFiles) {
-
-  const transpileResults: TranspileModulesResults = {
-    moduleFiles: {}
-  };
-
-  try {
-    // transpiling is synchronous
-    transpileModules(config, ctx, moduleFiles, transpileResults);
-
-    if (hasError(ctx.diagnostics)) {
-      // looks like we've got some transpile errors
-      // let's not continue with processing included styles
-      return transpileResults;
-    }
-
-    // get a list of all the files names that were transpiled
-    const transpiledFileNames = Object.keys(transpileResults.moduleFiles);
-
-    await Promise.all(transpiledFileNames.map(transpiledFileName => {
-      const moduleFile = transpileResults.moduleFiles[transpiledFileName];
-      return processIncludedStyles(config, ctx, moduleFile);
-    }));
-
-  } catch (e) {
-    catchError(ctx.diagnostics, e);
-  }
-
-  return transpileResults;
-}
 
 
 /**
@@ -101,21 +69,23 @@ export function transpileModule(config: BuildConfig, compilerOptions: ts.Compile
   return results;
 }
 
-function transpileModules(config: BuildConfig, ctx: BuildContext, moduleFiles: ModuleFiles, transpileResults: TranspileModulesResults) {
-  if (ctx.isChangeBuild) {
-    // if this is a change build, then narrow down
-    moduleFiles = getChangeBuildModules(ctx, moduleFiles);
+
+export function transpileModules(config: BuildConfig, ctx: BuildContext) {
+  if (hasError(ctx.diagnostics)) {
+    // we've already got an error, let's not continue
+    return;
   }
 
-  const tsFileNames = Object.keys(moduleFiles);
+  // get all of the typescript source file paths we want to transpile
+  const tsFilePaths = getTsFilePaths(ctx);
 
-  if (!tsFileNames.length) {
+  if (!tsFilePaths.length) {
     // don't bother if there are no ts files to transpile
     return;
   }
 
   // fire up the typescript program
-  let timespace = config.logger.createTimeSpan('transpile es2015 start', true);
+  const timespace = config.logger.createTimeSpan('transpileModules start', true);
 
   // get the tsconfig compiler options we'll use
   const tsOptions = getUserTsConfig(config);
@@ -127,11 +97,11 @@ function transpileModules(config: BuildConfig, ctx: BuildContext, moduleFiles: M
 
   // get the ts compiler host we'll use, which patches file operations
   // with our in-memory file system
-  const tsHost = getTsHost(config, ctx, tsOptions, transpileResults);
+  const tsHost = getTsHost(config, ctx, tsOptions);
 
   // fire up the typescript program
-  const componentsFilePath = config.sys.path.join(config.srcDir, COMPONENTS_DTS);
-  const checkProgram = ts.createProgram(tsFileNames.filter(fileName => fileName !== componentsFilePath), tsOptions, tsHost);
+  const componentsFilePath = pathJoin(config, config.srcDir, COMPONENTS_DTS);
+  const checkProgram = ts.createProgram(tsFilePaths.filter(filePath => filePath !== componentsFilePath), tsOptions, tsHost);
 
   // Gather component metadata and type info
   const metadata = gatherMetadata(config, checkProgram.getTypeChecker(), checkProgram.getSourceFiles());
@@ -150,28 +120,28 @@ function transpileModules(config: BuildConfig, ctx: BuildContext, moduleFiles: M
   });
 
   // Generate d.ts files for component types
-  const componentsFileContent = generateComponentTypesFile(config, metadata);
-  if (ctx.appFiles.components_d_ts !== componentsFileContent) {
-    // the components.d.ts file is unchanged, no need to resave
-    ctx.fs.writeFileSync(componentsFilePath, componentsFileContent);
+  const componentTypesFileContent = generateComponentTypesFile(config, metadata);
+  ctx.fs.writeFileSync(componentsFilePath, componentTypesFileContent);
 
-    ctx.moduleFiles[componentsFilePath] = {
-      tsFilePath: componentsFilePath,
-      tsText: componentsFileContent
-    };
-  }
+  // create or reuse a module file file object
+  ctx.moduleFiles[componentsFilePath] = ctx.moduleFiles[componentsFilePath] || {};
+  ctx.moduleFiles[componentsFilePath].tsFilePath = componentsFilePath;
 
-  // cache this for rebuilds to avoid unnecessary writes
-  ctx.appFiles.components_d_ts = componentsFileContent;
+  // keep track of how many files we transpiled (great for debugging/testing)
+  ctx.transpileBuildCount = tsFilePaths.length;
 
-  const program = ts.createProgram(tsFileNames, tsOptions, tsHost, checkProgram);
+  // create another program
+  const program = ts.createProgram(tsFilePaths, tsOptions, tsHost, checkProgram);
 
-  transpileProgram(program, tsHost, config, ctx, transpileResults);
-  timespace.finish(`transpile es2015 finished`);
+  // run the program again with our new typed info
+  transpileProgram(program, tsHost, config, ctx);
+
+  // done and done
+  timespace.finish(`transpileModules finished`);
 }
 
 
-function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: BuildConfig, ctx: BuildContext, transpileResults: TranspileModulesResults) {
+function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: BuildConfig, ctx: BuildContext) {
 
   // this is the big one, let's go ahead and kick off the transpiling
   program.emit(undefined, tsHost.writeFile, undefined, false, {
@@ -181,9 +151,6 @@ function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: 
       addComponentMetadata(config, ctx.moduleFiles)
     ]
   });
-
-  // keep track of how many files we transpiled (great for debugging/testing)
-  ctx.transpileBuildCount = Object.keys(transpileResults.moduleFiles).length;
 
   if (!config.suppressTypeScriptErrors) {
     // suppressTypeScriptErrors mainly for unit testing
@@ -197,98 +164,123 @@ function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: 
 }
 
 
-function getChangeBuildModules(ctx: BuildContext, moduleFiles: ModuleFiles) {
-  const changeModuleFiles: ModuleFiles = {};
-
-  const tsFileNames = Object.keys(moduleFiles);
-  tsFileNames.forEach(tsFileName => {
-    const moduleFile = moduleFiles[tsFileName];
-
-    if (moduleFile.tsFilePath.indexOf('.d.ts') > -1) {
-      // don't bother for d.ts files
-      return;
-    }
-
-    if (typeof ctx.jsFiles[moduleFile.jsFilePath] !== 'string') {
-      // only add it to our collection when there is no jsText
-      changeModuleFiles[tsFileName] = moduleFile;
-    }
-  });
-
-  return changeModuleFiles;
-}
-
-
-function processIncludedStyles(config: BuildConfig, ctx: BuildContext, moduleFile: ModuleFile) {
-  if (ctx.isChangeBuild && !ctx.changeHasSass && !ctx.changeHasCss) {
-    // this is a change, but it's not for any styles so don't bother
-    return Promise.resolve([]);
+function getTsFilePaths(ctx: BuildContext) {
+  if (!ctx.isRebuild || ctx.requiresFullTypescriptRebuild) {
+    // this is the first build, so let's get all the ts file paths
+    // from the already collected object of moduleFiles
+    // or we already know that we need to do a full typescript rebuild
+    return Object.keys(ctx.moduleFiles);
   }
 
-  if (!moduleFile.cmpMeta || !moduleFile.cmpMeta.stylesMeta) {
-    // module isn't a component or the component doesn't have styles, so don't bother
-    return Promise.resolve([]);
-  }
-
-  const promises: Promise<any>[] = [];
-
-  // loop through each of the style paths and see if there are any sass files
-  // for each sass file let's figure out which source sass files it uses
-  const modeNames = Object.keys(moduleFile.cmpMeta.stylesMeta);
-  modeNames.forEach(modeName => {
-    const modeMeta = moduleFile.cmpMeta.stylesMeta[modeName];
-
-    if (modeMeta.absolutePaths) {
-      modeMeta.absolutePaths.forEach(absoluteStylePath => {
-        if (isSassFile(absoluteStylePath)) {
-          // this componet mode has a sass file, let's see which
-          // sass files are included in it
-          promises.push(
-            getIncludedSassFiles(config, ctx.diagnostics, moduleFile, absoluteStylePath)
-          );
-        }
-      });
-    }
-
-  });
-
-  return Promise.all(promises);
-}
-
-
-function getIncludedSassFiles(config: BuildConfig, diagnostics: Diagnostic[], moduleFile: ModuleFile, scssFilePath: string) {
-  return new Promise(resolve => {
-    scssFilePath = normalizePath(scssFilePath);
-
-    const sassConfig = {
-      ...config.sassConfig,
-      file: scssFilePath
-    };
-
-    moduleFile.includedSassFiles = moduleFile.includedSassFiles || [];
-
-    if (moduleFile.includedSassFiles.indexOf(scssFilePath) === -1) {
-      moduleFile.includedSassFiles.push(scssFilePath);
-    }
-
-    config.sys.sass.render(sassConfig, (err, result) => {
-      if (err) {
-        const d = buildError(diagnostics);
-        d.messageText = err.message;
-        d.absFilePath = err.file;
-
-      } else if (result.stats && result.stats.includedFiles) {
-        result.stats.includedFiles.forEach((includedFile: string) => {
-          includedFile = normalizePath(includedFile);
-
-          if (moduleFile.includedSassFiles.indexOf(includedFile) === -1) {
-            moduleFile.includedSassFiles.push(includedFile);
-          }
-        });
-      }
-
-      resolve();
-    });
-
+  // this is a rebuild, narrow down the files that we already know changed
+  // go through the list of changed files and only pick out
+  // the files that are typescript files, to include d.ts files
+  // this speeds up transpile times by only worrying about changed files
+  return Object.keys(ctx.moduleFiles).filter(tsFilePath => {
+    return isTsFile(tsFilePath) || isDtsFile(tsFilePath);
   });
 }
+
+
+// function processIncludedStyles(config: BuildConfig, ctx: BuildContext, moduleFile: ModuleFile) {
+//   if (ctx.isChangeBuild && !ctx.changeHasSass && !ctx.changeHasCss) {
+//     // this is a change, but it's not for any styles so don't bother
+//     return Promise.resolve([]);
+//   }
+
+//   if (!moduleFile.cmpMeta || !moduleFile.cmpMeta.stylesMeta) {
+//     // module isn't a component or the component doesn't have styles, so don't bother
+//     return Promise.resolve([]);
+//   }
+
+//   const promises: Promise<any>[] = [];
+
+//   // loop through each of the style paths and see if there are any sass files
+//   // for each sass file let's figure out which source sass files it uses
+//   const modeNames = Object.keys(moduleFile.cmpMeta.stylesMeta);
+//   modeNames.forEach(modeName => {
+//     const modeMeta = moduleFile.cmpMeta.stylesMeta[modeName];
+
+//     if (modeMeta.absolutePaths) {
+//       modeMeta.absolutePaths.forEach(absoluteStylePath => {
+//         if (isSassFile(absoluteStylePath)) {
+//           // this componet mode has a sass file, let's see which
+//           // sass files are included in it
+//           promises.push(
+//             getIncludedSassFiles(config, ctx.diagnostics, moduleFile, absoluteStylePath)
+//           );
+//         }
+//       });
+//     }
+
+//   });
+
+//   return Promise.all(promises);
+// }
+
+
+// function getIncludedSassFiles(config: BuildConfig, diagnostics: Diagnostic[], moduleFile: ModuleFile, scssFilePath: string) {
+//   return new Promise(resolve => {
+//     scssFilePath = normalizePath(scssFilePath);
+
+//     const sassConfig = {
+//       ...config.sassConfig,
+//       file: scssFilePath
+//     };
+
+//     const includedSassFiles: string[] = []
+
+//     if (includedSassFiles.indexOf(scssFilePath) === -1) {
+//       moduleFile.includedSassFiles.push(scssFilePath);
+//     }
+
+//     config.sys.sass.render(sassConfig, (err, result) => {
+//       if (err) {
+//         const d = buildError(diagnostics);
+//         d.messageText = err.message;
+//         d.absFilePath = err.file;
+
+//       } else if (result.stats && result.stats.includedFiles) {
+//         result.stats.includedFiles.forEach((includedFile: string) => {
+//           includedFile = normalizePath(includedFile);
+
+//           if (moduleFile.includedSassFiles.indexOf(includedFile) === -1) {
+//             moduleFile.includedSassFiles.push(includedFile);
+//           }
+//         });
+//       }
+
+//       resolve();
+//     });
+
+//   });
+// }
+
+// async function copySourceSassFilesToDest(config: BuildConfig, ctx: BuildContext, compileResults: CompileResults): Promise<any> {
+//   if (!config.generateDistribution) {
+//     return;
+//   }
+
+//   return Promise.all(compileResults.includedSassFiles.map(async sassSrcPath => {
+//     const sassSrcText = await ctx.fs.readFile(sassSrcPath);
+
+//     const includeDir = sassSrcPath.indexOf(config.srcDir) === 0;
+//     let sassDestPath: string;
+
+//     if (includeDir) {
+//       sassDestPath = pathJoin(
+//         config,
+//         config.collectionDir,
+//         config.sys.path.relative(config.srcDir, sassSrcPath)
+//       );
+
+//     } else {
+//       sassDestPath = pathJoin(config,
+//         config.rootDir,
+//         config.sys.path.relative(config.rootDir, sassSrcPath)
+//       );
+//     }
+
+//     ctx.fs.writeFile(sassDestPath, sassSrcText);
+//   }));
+// }

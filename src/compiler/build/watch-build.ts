@@ -12,6 +12,7 @@ export function watchBuild(config: BuildConfig, ctx: BuildContext, requiresFullB
   ctx.changeHasSass = true;
   ctx.changeHasCss = true;
   ctx.changedFiles = changedFiles;
+  ctx.requiresFullTypescriptRebuild = requiresFullBuild;
 
   if (!ctx.lastBuildHadError && !requiresFullBuild && changedFiles.length) {
     let changeHasComponentModules = false;
@@ -33,9 +34,6 @@ export function watchBuild(config: BuildConfig, ctx: BuildContext, requiresFullB
           // not in cache, so let's consider it a module change
           changeHasNonComponentModules = true;
         }
-
-        // remove its cached content
-        delete ctx.moduleFiles[changedFile];
 
       } else if (isSassFile(changedFile)) {
         ctx.changeHasSass = true;
@@ -74,8 +72,6 @@ export function watchBuild(config: BuildConfig, ctx: BuildContext, requiresFullB
 
   if (!ctx.isChangeBuild) {
     // completely clear out the cache
-    ctx.moduleFiles = {};
-    ctx.jsFiles = {};
     ctx.moduleBundleOutputs = {};
     ctx.moduleBundleLegacyOutputs = {};
   }

@@ -51,7 +51,7 @@ export async function build(config: BuildConfig, ctx: BuildContext) {
     generateHtmlDiagnostics(config, buildResults.diagnostics);
     buildResults.hasErrors = true;
 
-    ctx.events.emit('build', buildResults);
+    ctx.events.emit('rebuild', buildResults);
     return buildResults;
   }
 
@@ -62,11 +62,11 @@ export async function build(config: BuildConfig, ctx: BuildContext) {
     // begin the build
     // async scan the src directory for ts files
     // then transpile them all in one go
-    const compileResults = await compileSrcDir(config, ctx);
+    await compileSrcDir(config, ctx);
 
-    // generation the app manifest from the compiled results
+    // generation the app manifest from the compiled module file results
     // and from all the dependent collections
-    await generateAppManifest(config, ctx, compileResults.moduleFiles);
+    await generateAppManifest(config, ctx);
 
     // bundle modules and styles into separate files phase
     const bundles = await bundle(config, ctx);

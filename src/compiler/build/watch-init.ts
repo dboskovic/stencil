@@ -166,7 +166,7 @@ function addWatcherListeners(config: BuildConfig, ctx: BuildContext) {
         config.logger.error(e.toString());
       }
 
-    }, 50);
+    }, 40);
   }
 
   function startCopyTasks() {

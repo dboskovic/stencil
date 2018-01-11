@@ -213,7 +213,7 @@ export class NodeFileSystem implements InMemoryFileSystem {
     };
   }
 
-  async writeFile(filePath: string, content: string) {
+  async writeFile(filePath: string, content: string, inMemoryOnly = false) {
     filePath = normalizePath(filePath);
 
     const f = this.d[filePath];
@@ -227,13 +227,15 @@ export class NodeFileSystem implements InMemoryFileSystem {
     d.isDirectory = false;
     d.fileContent = content;
 
-    this.writeTasks.push({
-      filePath: filePath,
-      writeContent: content
-    });
+    if (inMemoryOnly !== true) {
+      this.writeTasks.push({
+        filePath: filePath,
+        writeContent: content
+      });
+    }
   }
 
-  writeFileSync(filePath: string, content: string) {
+  writeFileSync(filePath: string, content: string, inMemoryOnly = false) {
     filePath = normalizePath(filePath);
 
     const f = this.d[filePath];
@@ -247,8 +249,10 @@ export class NodeFileSystem implements InMemoryFileSystem {
     d.isDirectory = false;
     d.fileContent = content;
 
-    this.ensureDirSync(this.nodePath.dirname(filePath));
-    this.disk.writeFileSync(filePath, content);
+    if (inMemoryOnly !== true) {
+      this.ensureDirSync(this.nodePath.dirname(filePath));
+      this.disk.writeFileSync(filePath, content);
+    }
   }
 
   async commit() {

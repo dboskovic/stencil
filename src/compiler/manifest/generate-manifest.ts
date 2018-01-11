@@ -4,7 +4,7 @@ import { loadDependentManifests } from './load-dependent-manifests';
 import { mergeDependentManifests } from './merge-manifests';
 
 
-export async function generateAppManifest(config: BuildConfig, ctx: BuildContext, moduleFiles: ModuleFiles) {
+export async function generateAppManifest(config: BuildConfig, ctx: BuildContext) {
   try {
     // create the app manifest we're going to fill up with data
     // the data will be both the app's data, and the collections it depends on
@@ -26,7 +26,7 @@ export async function generateAppManifest(config: BuildConfig, ctx: BuildContext
 
     // add the app's compiled components to the manifest
     addAppBundles(config, ctx.manifest);
-    addAppComponents(config, ctx.manifest, moduleFiles);
+    addAppComponents(config, ctx.manifest, ctx.moduleFiles);
 
     // load each of the manifests for each dependent collection
     const dependentManifests = await loadDependentManifests(config, ctx);

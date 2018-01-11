@@ -39,6 +39,7 @@ export class Compiler {
     this.ctx.events.unsubscribe(eventName, cb);
   }
 
+  trigger(eventName: 'fileAdd', path: string): void;
   trigger(eventName: 'fileChange', path: string): void;
   trigger(eventName: 'fileAdd', path: string): void;
   trigger(eventName: 'fileDelete', path: string): void;

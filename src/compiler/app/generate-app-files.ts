@@ -24,14 +24,14 @@ export async function generateAppFiles(config: BuildConfig, ctx: BuildContext, b
   const globalJsContentsEs2015 = await generateAppGlobalScript(config, ctx, appRegistry);
 
   // figure out which sections should be included in the core build
-  const buildConditionals = setBuildConditionals(ctx, bundles);
+  const buildConditionals = await setBuildConditionals(config, ctx, bundles);
   buildConditionals.coreId = 'core';
   buildConditionals.ssrClientSide = false;
 
   const coreFilename = await generateCore(config, ctx, globalJsContentsEs2015, buildConditionals);
   appRegistry.core = coreFilename;
 
-  const buildConditionalsSsr = setBuildConditionals(ctx, bundles);
+  const buildConditionalsSsr = await setBuildConditionals(config, ctx, bundles);
   buildConditionalsSsr.coreId = 'core.ssr';
   buildConditionalsSsr.ssrClientSide = true;
 
@@ -44,7 +44,7 @@ export async function generateAppFiles(config: BuildConfig, ctx: BuildContext, b
     // es5 build (if needed)
     const globalJsContentsEs5 = await generateAppGlobalScript(config, ctx, appRegistry, 'es5');
 
-    const buildConditionalsEs5 = setBuildConditionals(ctx, bundles);
+    const buildConditionalsEs5 = await setBuildConditionals(config, ctx, bundles);
     buildConditionalsEs5.coreId = 'core.pf';
     buildConditionalsEs5.es5 = true;
     buildConditionalsEs5.polyfills = true;

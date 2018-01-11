@@ -12,7 +12,6 @@ export function getBuildContext(sys: StencilSystem, ctx: BuildContext = {}) {
   ctx.appGlobalStyles = ctx.appGlobalStyles || {};
   ctx.coreBuilds = ctx.coreBuilds || {};
   ctx.moduleFiles = ctx.moduleFiles || {};
-  ctx.jsFiles = ctx.jsFiles || {};
   ctx.rollupCache = ctx.rollupCache || {};
   ctx.dependentManifests = ctx.dependentManifests || {};
   ctx.moduleBundleOutputs = ctx.moduleBundleOutputs || {};
@@ -22,7 +21,6 @@ export function getBuildContext(sys: StencilSystem, ctx: BuildContext = {}) {
   if (typeof ctx.buildCount !== 'number') {
     ctx.buildCount = 0;
   }
-  console.log('ctx.buildCount', ctx.buildCount)
 
   return ctx;
 }

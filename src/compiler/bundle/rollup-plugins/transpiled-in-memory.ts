@@ -69,24 +69,12 @@ export default function transpiledInMemoryPlugin(config: BuildConfig, ctx: Build
     async load(sourcePath: string) {
       sourcePath = normalizePath(sourcePath);
 
-      if (typeof ctx.jsFiles[sourcePath] === 'string') {
-        // perfect, we already got this js file cached
-        return ctx.jsFiles[sourcePath];
-      }
-
       if (typeof assetsCache[sourcePath] === 'string') {
         // awesome, this is one of the cached asset file we already read in resolveId
         return assetsCache[sourcePath];
       }
 
-      // ok so it's not in one of our caches, so let's look it up directly
-      const jsText = await ctx.fs.readFile(sourcePath);
-      ctx.moduleFiles[sourcePath] = {
-        jsFilePath: sourcePath,
-      };
-      ctx.jsFiles[sourcePath] = jsText;
-
-      return jsText;
+      return ctx.fs.readFile(sourcePath);
     }
   };
 }

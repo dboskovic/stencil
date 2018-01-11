@@ -217,11 +217,9 @@ export interface ManifestCompiler {
 
 export interface ModuleFile {
   tsFilePath?: string;
-  tsText?: string;
   dtsFilePath?: string;
   jsFilePath?: string;
   cmpMeta?: ComponentMeta;
-  includedSassFiles?: string[];
   isCollectionDependency?: boolean;
   excludeFromCollection?: boolean;
   originalCollectionComponentPath?: string;
@@ -492,7 +490,6 @@ export interface BuildContext {
   fs?: InMemoryFileSystem;
   events?: BuildEvents;
   moduleFiles?: ModuleFiles;
-  jsFiles?: FilesMap;
   rollupCache?: { [cacheKey: string]: any };
   moduleBundleOutputs?: ModuleBundles;
   moduleBundleLegacyOutputs?: ModuleBundles;
@@ -504,7 +501,6 @@ export interface BuildContext {
     corePolyfilled?: string;
     global?: string;
     registryJson?: string;
-    components_d_ts?: string;
     [key: string]: string;
   };
   appGlobalStyles?: {
@@ -523,6 +519,7 @@ export interface BuildContext {
   changeHasCss?: boolean;
   changeHasHtml?: boolean;
   changedFiles?: string[];
+  requiresFullTypescriptRebuild?: boolean;
 
   buildCount?: number;
   sassBuildCount?: number;
@@ -545,17 +542,6 @@ export interface ModuleFiles {
 
 export interface ModuleBundles {
   [bundleId: string]: string;
-}
-
-
-export interface CompileResults {
-  moduleFiles: ModuleFiles;
-  includedSassFiles?: string[];
-}
-
-
-export interface TranspileModulesResults {
-  moduleFiles: ModuleFiles;
 }
 
 
@@ -1255,7 +1241,7 @@ export interface FileSystem {
   readFileSync(filePath: string, encoding?: string): string;
   stat(path: string): Promise<{ isFile: () => boolean; isDirectory: () => boolean; }>;
   statSync(path: string): { isFile: () => boolean; isDirectory: () => boolean; };
-  writeFile(filePath: string, content: string): Promise<void>;
+  writeFile(filePath: string, content: string, isInMemoryOnly?: boolean): Promise<void>;
   writeFileSync(filePath: string, content: string): void;
 }
 

@@ -1,22 +1,39 @@
-import { BuildContext, ComponentMeta, BuildConditionals, Bundle } from '../../util/interfaces';
+import { BuildContext, ComponentMeta, BuildConditionals, Bundle, ModuleFile, BuildConfig } from '../../util/interfaces';
 import { ENCAPSULATION, MEMBER_TYPE, PROP_TYPE } from '../../util/constants';
 
 
-export function setBuildConditionals(ctx: BuildContext, bundles: Bundle[]) {
+export async function setBuildConditionals(config: BuildConfig, ctx: BuildContext, bundles: Bundle[]) {
   // figure out which sections of the core code this build doesn't even need
   const coreBuild: BuildConditionals = ({} as any);
   coreBuild.clientSide = true;
 
+  const promises: Promise<void>[] = [];
+
   bundles.forEach(bundle => {
     bundle.moduleFiles.forEach(moduleFile => {
       if (moduleFile.cmpMeta) {
-        setBuildFromComponentMeta(coreBuild, moduleFile.cmpMeta);
-        setBuildFromComponentContent(coreBuild, ctx.jsFiles[moduleFile.jsFilePath]);
+        promises.push(setBuildFromComponent(config, ctx, coreBuild, moduleFile));
       }
     });
   });
 
+  await Promise.all(promises);
+
   return coreBuild;
+}
+
+
+async function setBuildFromComponent(config: BuildConfig, ctx: BuildContext, coreBuild: BuildConditionals, moduleFile: ModuleFile) {
+  setBuildFromComponentMeta(coreBuild, moduleFile.cmpMeta);
+
+  if (moduleFile.jsFilePath) {
+    try {
+      const jsText = await ctx.fs.readFile(moduleFile.jsFilePath);
+      setBuildFromComponentContent(coreBuild, jsText);
+    } catch (e) {
+      config.logger.debug(`setBuildFromComponent: ${moduleFile.jsFilePath}: ${e}`);
+    }
+  }
 }
 
 
