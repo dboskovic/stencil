@@ -1,5 +1,5 @@
 import { BuildConfig } from '../../../util/interfaces';
-import { isFileIncludePath } from '../compile-src';
+import { isFileIncludePath } from '../transpile-scan-src';
 import { mockBuildConfig } from '../../../testing/mocks';
 
 

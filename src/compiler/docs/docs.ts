@@ -1,13 +1,13 @@
 import { BuildConfig, BuildContext } from '../../util/interfaces';
 import { catchError, getBuildContext, hasError, resetBuildContext } from '../util';
 import { cleanDiagnostics } from '../../util/logger/logger-util';
-import { compileSrcDir } from '../build/compile-src';
 import { generateReadmes } from './generate-readmes';
 import { generateHtmlDiagnostics } from '../../util/logger/generate-html-diagnostics';
 import { isConfigValid } from '../build/build';
+import { transpileScanSrc } from '../transpile/transpile-scan-src';
 
 
-export function docs(config: BuildConfig, ctx: BuildContext) {
+export async function docs(config: BuildConfig, ctx: BuildContext) {
   ctx = getBuildContext(config.sys, ctx);
   resetBuildContext(ctx);
 
@@ -18,43 +18,39 @@ export function docs(config: BuildConfig, ctx: BuildContext) {
     // invalid build config, let's not continue
     config.logger.printDiagnostics(ctx.diagnostics);
     generateHtmlDiagnostics(config, ctx.diagnostics);
-    return Promise.resolve(null);
+    return;
   }
 
   // keep track of how long the entire build process takes
   const timeSpan = config.logger.createTimeSpan(`generate docs, ${config.fsNamespace}, started`);
 
-  // begin the build
-  return Promise.resolve().then(() => {
+  try {
+    // begin the build
     // async scan the src directory for ts files
     // then transpile them all in one go
-    return compileSrcDir(config, ctx);
+    await transpileScanSrc(config, ctx);
 
-  }).then(() => {
     // generate each of the readmes
-    return generateReadmes(config, ctx);
+    await generateReadmes(config, ctx);
 
-  }).catch(err => {
+  } catch (e) {
     // catch all phase
-    catchError(ctx.diagnostics, err);
+    catchError(ctx.diagnostics, e);
+  }
 
-  }).then(() => {
-    // finalize phase
-    ctx.diagnostics = cleanDiagnostics(ctx.diagnostics);
-    config.logger.printDiagnostics(ctx.diagnostics);
-    generateHtmlDiagnostics(config, ctx.diagnostics);
+  // finalize phase
+  ctx.diagnostics = cleanDiagnostics(ctx.diagnostics);
+  config.logger.printDiagnostics(ctx.diagnostics);
+  generateHtmlDiagnostics(config, ctx.diagnostics);
 
-    // create a nice pretty message stating what happend
-    let buildStatus = 'finished';
-    let statusColor = 'green';
+  // create a nice pretty message stating what happend
+  let buildStatus = 'finished';
+  let statusColor = 'green';
 
-    if (hasError(ctx.diagnostics)) {
-      buildStatus = 'failed';
-      statusColor = 'red';
-    }
+  if (hasError(ctx.diagnostics)) {
+    buildStatus = 'failed';
+    statusColor = 'red';
+  }
 
-    timeSpan.finish(`generate docs ${buildStatus}`, statusColor, true, true);
-
-    return null;
-  });
+  timeSpan.finish(`generate docs ${buildStatus}`, statusColor, true, true);
 }

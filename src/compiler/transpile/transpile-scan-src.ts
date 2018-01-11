@@ -3,7 +3,7 @@ import { catchError, hasError, pathJoin } from '../util';
 import { transpileModules } from '../transpile/transpile';
 
 
-export async function compileSrcDir(config: BuildConfig, ctx: BuildContext) {
+export async function transpileScanSrc(config: BuildConfig, ctx: BuildContext) {
   if (hasError(ctx.diagnostics)) {
     // we've already got an error, let's not continue
     return;

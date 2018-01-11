@@ -2,7 +2,6 @@ import { BuildConfig, BuildContext, BuildResults, Diagnostic } from '../../util/
 import { bundle } from '../bundle/bundle';
 import { catchError, getBuildContext, hasError, resetBuildContext } from '../util';
 import { cleanDiagnostics } from '../../util/logger/logger-util';
-import { compileSrcDir } from './compile-src';
 import { copyTasks } from './copy-tasks';
 import { emptyDestDir, writeBuildFiles } from './write-build';
 import { generateAppFiles } from '../app/generate-app-files';
@@ -14,6 +13,7 @@ import { generateReadmes } from '../docs/generate-readmes';
 import { initIndexHtml } from '../html/init-index-html';
 import { initWatch } from './watch-init';
 import { prerenderApp } from '../prerender/prerender-app';
+import { transpileScanSrc } from '../transpile/transpile-scan-src';
 import { validateBuildConfig } from '../../util/validate-config';
 import { validatePrerenderConfig } from '../prerender/validate-prerender-config';
 import { validateServiceWorkerConfig } from '../service-worker/validate-sw-config';
@@ -62,7 +62,7 @@ export async function build(config: BuildConfig, ctx: BuildContext) {
     // begin the build
     // async scan the src directory for ts files
     // then transpile them all in one go
-    await compileSrcDir(config, ctx);
+    await transpileScanSrc(config, ctx);
 
     // generation the app manifest from the compiled module file results
     // and from all the dependent collections
