@@ -1,4 +1,4 @@
-import { AssetsMeta, BuildConfig, BuildContext, BuildResults, ManifestBundle, BundleData,
+import { AssetsMeta, BuildConfig, BuildContext, ManifestBundle, BundleData,
   ComponentMeta, ComponentData, EventData, EventMeta, Manifest, ManifestData, ModuleFile, ListenerData,
   ListenMeta, PropData, StyleData, StyleMeta } from '../../util/interfaces';
 import { COLLECTION_MANIFEST_FILE_NAME, ENCAPSULATION, MEMBER_TYPE, PROP_TYPE } from '../../util/constants';
@@ -12,7 +12,7 @@ import { normalizePath } from '../util';
 // couple core component meta data between specific versions of the compiler
 
 
-export function writeAppManifest(config: BuildConfig, ctx: BuildContext, buildResults: BuildResults) {
+export function writeAppManifest(config: BuildConfig, ctx: BuildContext) {
 
   // get the absolute path to the directory where the manifest will be saved
   const manifestDir = normalizePath(config.collectionDir);
@@ -24,12 +24,14 @@ export function writeAppManifest(config: BuildConfig, ctx: BuildContext, buildRe
 
   // serialize the manifest into a json string and
   // add it to the list of files we need to write when we're ready
-  buildResults.manifest = serializeAppManifest(config, manifestDir, ctx.manifest);
+  const manifestData = serializeAppManifest(config, manifestDir, ctx.manifest);
 
   if (config.generateDistribution) {
     // don't bother serializing/writing the manifest if we're not creating a distribution
-    ctx.filesToWrite[manifestFilePath] = JSON.stringify(buildResults.manifest, null, 2);
+    ctx.fs.writeFile(manifestFilePath, JSON.stringify(manifestData, null, 2));
   }
+
+  return manifestData;
 }
 
 

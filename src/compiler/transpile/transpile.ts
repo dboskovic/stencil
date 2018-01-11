@@ -14,37 +14,37 @@ import { removeImports } from './transformers/remove-imports';
 import * as ts from 'typescript';
 
 
-export function transpileFiles(config: BuildConfig, ctx: BuildContext, moduleFiles: ModuleFiles) {
+export async function transpileFiles(config: BuildConfig, ctx: BuildContext, moduleFiles: ModuleFiles) {
 
   const transpileResults: TranspileModulesResults = {
     moduleFiles: {}
   };
 
-  return Promise.resolve().then(() => {
+  try {
     // transpiling is synchronous
     transpileModules(config, ctx, moduleFiles, transpileResults);
 
     if (hasError(ctx.diagnostics)) {
       // looks like we've got some transpile errors
       // let's not continue with processing included styles
-      return Promise.resolve([]);
+      return transpileResults;
     }
 
     // get a list of all the files names that were transpiled
     const transpiledFileNames = Object.keys(transpileResults.moduleFiles);
 
-    return Promise.all(transpiledFileNames.map(transpiledFileName => {
+    await Promise.all(transpiledFileNames.map(transpiledFileName => {
       const moduleFile = transpileResults.moduleFiles[transpiledFileName];
       return processIncludedStyles(config, ctx, moduleFile);
     }));
 
-  }).catch(err => {
-    catchError(ctx.diagnostics, err);
+  } catch (e) {
+    catchError(ctx.diagnostics, e);
+  }
 
-  }).then(() => {
-    return transpileResults;
-  });
+  return transpileResults;
 }
+
 
 /**
  * This is only used during TESTING
@@ -153,7 +153,8 @@ function transpileModules(config: BuildConfig, ctx: BuildContext, moduleFiles: M
   const componentsFileContent = generateComponentTypesFile(config, metadata);
   if (ctx.appFiles.components_d_ts !== componentsFileContent) {
     // the components.d.ts file is unchanged, no need to resave
-    config.sys.fs.writeFileSync(componentsFilePath, componentsFileContent, { encoding: 'utf8' });
+    ctx.fs.writeFileSync(componentsFilePath, componentsFileContent);
+
     ctx.moduleFiles[componentsFilePath] = {
       tsFilePath: componentsFilePath,
       tsText: componentsFileContent

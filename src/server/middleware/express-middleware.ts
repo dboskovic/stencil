@@ -1,5 +1,6 @@
 import { BuildConfig } from '../../util/interfaces';
 import { createRenderer } from '../renderer';
+import { getBuildContext } from '../../compiler/util';
 import { loadConfig } from '../../util/load-config';
 
 
@@ -9,13 +10,15 @@ export function ssrMiddleware(middlewareConfig: MiddlewareConfig) {
   const nodeSys = require(path.join(__dirname, '../sys/node/index.js'));
   const config = loadConfig(nodeSys.sys, middlewareConfig.config);
 
+  const ctx = getBuildContext(nodeSys.sys);
+
   // create the renderer
-  const renderer = createRenderer(config);
+  const renderer = createRenderer(config, ctx);
 
   let srcIndexHtml: string;
   try {
     // load the source index.html
-    srcIndexHtml = config.sys.fs.readFileSync(config.srcIndexHtml, 'utf-8');
+    srcIndexHtml = ctx.fs.readFileSync(config.srcIndexHtml);
 
   } catch (e) {
     config.logger.error(`ssrMiddleware, error loading srcIndexHtml: ${e}`);

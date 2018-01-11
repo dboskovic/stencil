@@ -1,5 +1,5 @@
 import { BuildConfig, BuildContext, ManifestBundle, DependentCollection, Manifest } from '../../util/interfaces';
-import { normalizePath, readFile } from '../util';
+import { normalizePath } from '../util';
 import { parseDependentManifest } from './manifest-data';
 
 
@@ -11,18 +11,19 @@ export function loadDependentManifests(config: BuildConfig, ctx: BuildContext) {
 }
 
 
-function loadDependentManifest(config: BuildConfig, ctx: BuildContext, dependentCollection: DependentCollection) {
+async function loadDependentManifest(config: BuildConfig, ctx: BuildContext, dependentCollection: DependentCollection) {
 
   if (ctx.dependentManifests[dependentCollection.name]) {
     // we've already cached the manifest, no need for another resolve/readFile/parse
-    return Promise.resolve(ctx.dependentManifests[dependentCollection.name]);
+    return ctx.dependentManifests[dependentCollection.name];
   }
 
   // figure out the path to the dependent collection's package.json
   const dependentPackageJsonFilePath = config.sys.resolveModule(config.rootDir, dependentCollection.name);
 
   // parse the dependent collection's package.json
-  const packageData = JSON.parse(config.sys.fs.readFileSync(dependentPackageJsonFilePath, 'utf-8'));
+  const packageJsonStr = await ctx.fs.readFile(dependentPackageJsonFilePath);
+  const packageData = JSON.parse(packageJsonStr);
 
   // verify this package has a "collection" property in its package.json
   if (!packageData.collection) {
@@ -38,22 +39,22 @@ function loadDependentManifest(config: BuildConfig, ctx: BuildContext, dependent
   );
 
   // we haven't cached the dependent manifest yet, let's read this file
-  return readFile(config.sys, dependentManifestFilePath).then(dependentManifestJson => {
-    // get the directory where the collection manifest file is sitting
-    const dependentManifestDir = normalizePath(config.sys.path.dirname(dependentManifestFilePath));
+  const dependentManifestJson = await ctx.fs.readFile(dependentManifestFilePath);
 
-    // parse the json string into our Manifest data
-    const dependentManifest = parseDependentManifest(config, dependentCollection.name, dependentManifestDir, dependentManifestJson);
+  // get the directory where the collection manifest file is sitting
+  const dependentManifestDir = normalizePath(config.sys.path.dirname(dependentManifestFilePath));
 
-    // go through and filter out components if need be
-    filterDependentComponents(config.bundles, dependentCollection, dependentManifest);
+  // parse the json string into our Manifest data
+  const dependentManifest = parseDependentManifest(config, dependentCollection.name, dependentManifestDir, dependentManifestJson);
 
-    // cache it for later yo
-    ctx.dependentManifests[dependentCollection.name] = dependentManifest;
+  // go through and filter out components if need be
+  filterDependentComponents(config.bundles, dependentCollection, dependentManifest);
 
-    // so let's recap: we've read the file, parsed it apart, and cached it, congrats
-    return dependentManifest;
-  });
+  // cache it for later yo
+  ctx.dependentManifests[dependentCollection.name] = dependentManifest;
+
+  // so let's recap: we've read the file, parsed it apart, and cached it, congrats
+  return dependentManifest;
 }
 
 

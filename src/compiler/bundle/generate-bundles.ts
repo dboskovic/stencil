@@ -99,23 +99,14 @@ function generateBundleBuild(config: BuildConfig, ctx: BuildContext, jsText: str
   // this is used by jsonp callbacks to know which bundle loaded
   jsText = replaceBundleIdPlaceholder(jsText, bundleId);
 
-  // use wwwBuildPath as the cache key
-  if (ctx.compiledFileCache[wwwBuildPath] === jsText) {
-    // unchanged, no need to resave
-    return;
-  }
-
-  // cache for later
-  ctx.compiledFileCache[wwwBuildPath] = jsText;
-
   if (config.generateWWW) {
     // write to the www build
-    ctx.filesToWrite[wwwBuildPath] = jsText;
+    ctx.fs.writeFile(wwwBuildPath, jsText);
   }
 
   if (config.generateDistribution) {
     // write to the dist build
-    ctx.filesToWrite[distPath] = jsText;
+    ctx.fs.writeFile(distPath, jsText);
   }
 }
 

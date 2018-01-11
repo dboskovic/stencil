@@ -186,7 +186,7 @@ export function createPlatformServer(
       try {
         const fileName = getBundleFilename(cmpMeta, modeName);
         const jsFilePath = config.sys.path.join(appBuildDir, fileName);
-        const jsCode = config.sys.fs.readFileSync(jsFilePath, 'utf-8');
+        const jsCode = ctx.fs.readFileSync(jsFilePath);
         config.sys.vm.runInContext(jsCode, win);
 
       } catch (e) {

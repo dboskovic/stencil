@@ -14,13 +14,13 @@ export function createAppRegistry(config: BuildConfig) {
 }
 
 
-export function getAppRegistry(config: BuildConfig) {
+export function getAppRegistry(config: BuildConfig, ctx: BuildContext) {
   const registryJsonFilePath = getRegistryJsonWWW(config);
   let appRegistry: AppRegistry;
 
   try {
     // open up the app registry json file
-    const appRegistryJson = config.sys.fs.readFileSync(registryJsonFilePath, 'utf-8');
+    const appRegistryJson = ctx.fs.readFileSync(registryJsonFilePath);
 
     // parse the json into app registry data
     appRegistry = JSON.parse(appRegistryJson);
@@ -56,17 +56,10 @@ export function writeAppRegistry(config: BuildConfig, ctx: BuildContext, appRegi
 
   const registryJson = JSON.stringify(appRegistry, null, 2);
 
-  // app registry json file is actually different from our last saved version
-  if (ctx.appFiles.registryJson === registryJson) {
-    return;
-  }
-
   // cache so we can check if it changed on rebuilds
   ctx.appFiles.registryJson = registryJson;
 
   const appRegistryWWW = getRegistryJsonWWW(config);
   config.logger.debug(`build, app www registry: ${appRegistryWWW}`);
-  ctx.filesToWrite[appRegistryWWW] = registryJson;
-
-  ctx.appFileBuildCount++;
+  ctx.fs.writeFile(appRegistryWWW, registryJson);
 }

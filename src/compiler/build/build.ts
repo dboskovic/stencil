@@ -2,7 +2,7 @@ import { BuildConfig, BuildContext, BuildResults, Diagnostic } from '../../util/
 import { bundle } from '../bundle/bundle';
 import { catchError, getBuildContext, hasError, resetBuildContext } from '../util';
 import { cleanDiagnostics } from '../../util/logger/logger-util';
-import { compileSrcDir } from './compile';
+import { compileSrcDir } from './compile-src';
 import { copyTasks } from './copy-tasks';
 import { emptyDestDir, writeBuildFiles } from './write-build';
 import { generateAppFiles } from '../app/generate-app-files';
@@ -12,39 +12,33 @@ import { generateHtmlDiagnostics } from '../../util/logger/generate-html-diagnos
 import { generateIndexHtml } from '../html/generate-index-html';
 import { generateReadmes } from '../docs/generate-readmes';
 import { initIndexHtml } from '../html/init-index-html';
+import { initWatch } from './watch-init';
 import { prerenderApp } from '../prerender/prerender-app';
-import { setupWatcher } from './watch';
 import { validateBuildConfig } from '../../util/validate-config';
 import { validatePrerenderConfig } from '../prerender/validate-prerender-config';
 import { validateServiceWorkerConfig } from '../service-worker/validate-sw-config';
 
 
-export async function build(config: BuildConfig, ctx?: any) {
+export async function build(config: BuildConfig, ctx: BuildContext) {
   // create the build context if it doesn't exist
   // the buid context is the same object used for all builds and rebuilds
   // ctx is where stuff is cached for fast in-memory lookups later
-  ctx = getBuildContext(config, ctx);
-
-  if (!ctx.isRebuild) {
-    config.logger.info(config.logger.cyan(`${config.sys.compiler.name} v${config.sys.compiler.version}`));
-  }
+  ctx = getBuildContext(config.sys, ctx);
 
   // reset the build context, this is important for rebuilds
   resetBuildContext(ctx);
 
   // create the build results that get returned
-  const buildResults: BuildResults = {
-    files: [],
-    diagnostics: [],
-    manifest: {},
-    changedFiles: ctx.isRebuild ? ctx.changedFiles : null
-  };
+  const buildResults = generateBuildResults(config, ctx);
 
   // validate the build config
   if (!isConfigValid(config, ctx, buildResults.diagnostics)) {
     // invalid build config, let's not continue
     config.logger.printDiagnostics(buildResults.diagnostics);
     generateHtmlDiagnostics(config, buildResults.diagnostics);
+    buildResults.hasErrors = true;
+
+    ctx.events.emit('build', buildResults);
     return buildResults;
   }
 
@@ -55,6 +49,9 @@ export async function build(config: BuildConfig, ctx?: any) {
     // something's wrong, so let's not continue
     config.logger.printDiagnostics(buildResults.diagnostics);
     generateHtmlDiagnostics(config, buildResults.diagnostics);
+    buildResults.hasErrors = true;
+
+    ctx.events.emit('build', buildResults);
     return buildResults;
   }
 
@@ -99,14 +96,14 @@ export async function build(config: BuildConfig, ctx?: any) {
     // generate each of the readmes
     await generateReadmes(config, ctx);
 
-    // write all the files and copy asset files
-    await writeBuildFiles(config, ctx, buildResults);
-
     // prerender that app
     await prerenderApp(config, ctx, bundles);
 
+    // write all the files and copy asset files
+    await writeBuildFiles(config, ctx, buildResults);
+
     // setup watcher if need be
-    await setupWatcher(config, ctx);
+    initWatch(config, ctx);
 
   } catch (e) {
     // catch all
@@ -129,18 +126,50 @@ export async function build(config: BuildConfig, ctx?: any) {
     statusColor = 'red';
   }
 
-  timeSpan.finish(`${buildText} ${buildStatus}${watchText}`, statusColor, true, true);
-
-  if (typeof ctx.onFinish === 'function') {
-    // fire off any provided onFinish fn every time the build finishes
-    ctx.onFinish(buildResults);
-  }
+  // print out the time it took to build
+  // and add the duration to the build results
+  buildResults.duration = timeSpan.finish(`${buildText} ${buildStatus}${watchText}`, statusColor, true, true);
 
   // remember if the last build had an error or not
   // this is useful if the next build should do a full build or not
   ctx.lastBuildHadError = hasError(ctx.diagnostics);
+  buildResults.hasErrors = ctx.lastBuildHadError;
+
+  // emit a build event, which happens for inital build and rebuilds
+  ctx.events.emit('build', buildResults);
+
+  if (ctx.isRebuild) {
+    // emit a rebuild event, which happens only for rebuilds
+    ctx.events.emit('rebuild', buildResults);
+  }
 
   // return what we've learned today
+  return buildResults;
+}
+
+
+function generateBuildResults(config: BuildConfig, ctx: BuildContext) {
+  // create the build results that get returned
+  const buildResults: BuildResults = {
+    diagnostics: [],
+    duration: 0,
+    hasErrors: false
+  };
+
+  // only bother adding the stats when in debug more (for testing mainly)
+  if (config.logger.level === 'debug') {
+    buildResults.stats = {
+      isRebuid: !!ctx.isRebuild,
+      files: [] as string[],
+      components: [] as string[],
+      changedFiles: [] as string[],
+      buildCount: 0,
+      transpileBuildCount: 0,
+      bundleBuildCount: 0,
+      sassBuildCount: 0
+    };
+  }
+
   return buildResults;
 }
 

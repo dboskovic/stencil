@@ -1,5 +1,5 @@
-import { BuildConfig, ComponentMeta, DomApi, HostContentNodes, HostElement,
-  HydrateOptions, HydrateResults, Logger, PlatformApi, RendererApi, StencilSystem, VNode, ComponentRegistry } from '../util/interfaces';
+import { BuildConfig, ComponentMeta, ComponentRegistry, DomApi, HostContentNodes, HostElement,
+  HydrateOptions, HydrateResults, Logger, PlatformApi, RendererApi, StencilSystem, VNode } from '../util/interfaces';
 import { ComponentInstance } from '../util/interfaces';
 import { createDomApi } from '../core/renderer/dom-api';
 import { createPlatformServer } from '../server/platform-server';
@@ -102,8 +102,7 @@ export function mockStencilSystem() {
     createDom: mockCreateDom,
 
     createFileSystem() {
-      const fsExtra = new MockFsExtra();
-      return new NodeFileSystem(fsExtra, path);
+      return mockFs();
     },
 
     emptyDir: function() {
@@ -129,8 +128,6 @@ export function mockStencilSystem() {
     },
 
     getClientCoreFile: mockGetClientCoreFile,
-
-    fs: null,
 
     isGlob: function(str) {
       const isGlob = require('is-glob');
@@ -160,14 +157,7 @@ export function mockStencilSystem() {
     sass: {
       render: function(config: any, cb: Function) {
         Promise.resolve().then(() => {
-          config;
-
-          let content: string;
-          if (sys.fs) {
-            content = sys.fs.readFileSync(config.file, 'utf-8');
-          } else {
-            content = `/** ${config.file} mock css **/`;
-          }
+          const content = `/** ${config.file} mock css **/`;
 
           cb(null, {
             css: content,
@@ -191,9 +181,7 @@ export function mockStencilSystem() {
       runInContext: function(code, contextifiedSandbox, options) {
         require('vm').runInContext(code, contextifiedSandbox, options);
       }
-    },
-
-    watch: mockWatch
+    }
   };
 
   return sys;
@@ -207,23 +195,6 @@ function mockGetClientCoreFile(opts: {staticName: string}) {
     })(window, document, '__APP__');`);
 }
 
-
-function mockWatch(paths: string): any {
-  paths;
-  const events: {[eventName: string]: Function} = {};
-
-  const watcher = {
-    on: function(eventName: string, listener: Function) {
-      events[eventName] = listener;
-      return watcher;
-    },
-    $triggerEvent: function(eventName: string, path: string) {
-      events[eventName](path);
-    }
-  };
-
-  return watcher;
-}
 
 function mockCreateDom() {
   const jsdom = require('jsdom');
@@ -266,47 +237,23 @@ rollup.plugins = {
 
 
 export function mockFs() {
-  const MemoryFileSystem = require('memory-fs');
-  const fs = new MemoryFileSystem();
-
-  const orgreadFileSync = fs.readFileSync;
-  const orgwriteFileSync = fs.writeFileSync;
-
-  fs.readFileSync = function() {
-    try {
-      return orgreadFileSync.apply(fs, arguments);
-    } catch (e) {
-      if (e.message && e.message.indexOf('invalid argument') > -1) {
-        console.log('mockFs, fs.readFileSync', arguments);
-        console.trace(e);
-      } else if (e.message && e.message.indexOf('no such file') > -1 && e.path.indexOf('node_modules') === -1) {
-        console.log('mockFs, fs.readFileSync', arguments);
-        console.trace(e);
-      } else {
-        throw e;
-      }
-    }
-  };
-
-  fs.writeFileSync = function() {
-    return orgwriteFileSync.apply(fs, arguments);
-  };
-
-  return fs;
+  const fsExtra = new MockFsExtra();
+  return new NodeFileSystem(fsExtra, path);
 }
 
 
 export function mockLogger() {
   const logger: Logger = {
-    level: 'info',
+    level: 'debug',
     debug: noop,
     info: noop,
     error: noop,
     warn: noop,
-    createTimeSpan: (startMsg: string, debug?: boolean) => {
+    createTimeSpan: (_startMsg: string, _debug?: boolean) => {
+      const start = Date.now();
       return {
         finish: () => {
-          startMsg; debug;
+          return Date.now() - start;
         }
       };
     },

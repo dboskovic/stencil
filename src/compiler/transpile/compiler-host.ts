@@ -1,5 +1,5 @@
 import { BuildConfig, BuildContext, ModuleFile, TranspileModulesResults } from '../../util/interfaces';
-import { normalizePath, isDtsFile, isJsFile, readFile } from '../util';
+import { normalizePath, isDtsFile, isJsFile } from '../util';
 import * as ts from 'typescript';
 
 
@@ -12,13 +12,16 @@ export function getTsHost(config: BuildConfig, ctx: BuildContext, tsCompilerOpti
       return ts.createSourceFile(filePath, cachedValue, ts.ScriptTarget.ES2015);
     }
 
-    const diskValue = readFileFromDisk(config, filePath);
-    if (diskValue != null) {
-      return ts.createSourceFile(filePath, diskValue, ts.ScriptTarget.ES2015);
+    let tsSourceFile: ts.SourceFile = null;
+
+    try {
+      tsSourceFile = ts.createSourceFile(filePath, ctx.fs.readFileSync(filePath), ts.ScriptTarget.ES2015);
+
+    } catch (e) {
+      config.logger.error(`tsHost.getSourceFile unable to find ${filePath}`);
     }
 
-    config.logger.error(`tsHost.getSourceFile unable to find ${filePath}`);
-    return null;
+    return tsSourceFile;
   };
 
   tsHost.fileExists = (filePath) => {
@@ -26,7 +29,7 @@ export function getTsHost(config: BuildConfig, ctx: BuildContext, tsCompilerOpti
       return true;
     }
 
-    return fileExistsOnDisk(config, filePath);
+    return ctx.fs.accessSync(filePath);
   },
 
   tsHost.readFile = (filePath) => {
@@ -35,12 +38,12 @@ export function getTsHost(config: BuildConfig, ctx: BuildContext, tsCompilerOpti
       return cachedValue;
     }
 
-    const diskValue = readFileFromDisk(config, filePath);
-    if (diskValue) {
-      return diskValue;
-    }
+    let sourceText: string = null;
+    try {
+      sourceText = ctx.fs.readFileSync(filePath);
+    } catch (e) {}
 
-    return null;
+    return sourceText;
   },
 
   tsHost.writeFile = (outputFilePath: string, outputText: string, writeByteOrderMark: boolean, onError: any, sourceFiles: ts.SourceFile[]): void => {
@@ -99,7 +102,7 @@ function writeFileInMemory(config: BuildConfig, ctx: BuildContext, transpileResu
     }
 
     // write the .d.ts file
-    ctx.filesToWrite[dtsFilePath] = outputText;
+    ctx.fs.writeFile(dtsFilePath, outputText);
 
     // add this module to the list of files that were just transpiled
     transpileResults.moduleFiles[tsFilePath] = moduleFile;
@@ -135,62 +138,29 @@ function readFromCache(ctx: BuildContext, filePath: string): string | undefined 
   return ctx.jsFiles[filePath];
 }
 
-/**
- * Check if a file exists on disk
- * @param config BuildConfig
- * @param filePath path to file to check existence on disk
- */
-function fileExistsOnDisk(config: BuildConfig, filePath: string) {
-  try {
-    const stat = config.sys.fs.statSync(normalizePath(filePath));
-    return stat.isFile();
-  } catch {
-    return false;
-  }
-}
 
-/**
- * Read a given file path from disk
- * @param config BuildConfig
- * @param filePath path to file to read from disk
- */
-function readFileFromDisk(config: BuildConfig, filePath: string) {
-  let fileContents: string | undefined;
-  try {
-    fileContents = config.sys.fs.readFileSync(normalizePath(filePath), 'utf-8');
-  } catch {
-    fileContents = undefined;
-  }
-
-  return fileContents;
-}
-
-
-
-export function getModuleFile(config: BuildConfig, ctx: BuildContext, tsFilePath: string): Promise<ModuleFile> {
+export async function getModuleFile(ctx: BuildContext, tsFilePath: string): Promise<ModuleFile> {
   tsFilePath = normalizePath(tsFilePath);
 
   let moduleFile = ctx.moduleFiles[tsFilePath];
   if (moduleFile) {
     if (typeof moduleFile.tsText === 'string') {
       // cool, already have the ts source content
-      return Promise.resolve(moduleFile);
+      return moduleFile;
     }
 
     // we have the module, but no source content, let's load it up
-    return readFile(config.sys, tsFilePath).then(tsText => {
-      moduleFile.tsText = tsText;
-      return moduleFile;
-    });
+    const tsText = await ctx.fs.readFile(tsFilePath);
+    moduleFile.tsText = tsText;
+    return moduleFile;
   }
 
   // never seen this ts file before, let's start a new module file
-  return readFile(config.sys, tsFilePath).then(tsText => {
-    moduleFile = ctx.moduleFiles[tsFilePath] = {
-      tsFilePath: tsFilePath,
-      tsText: tsText
-    };
+  const tsText = await ctx.fs.readFile(tsFilePath);
+  moduleFile = ctx.moduleFiles[tsFilePath] = {
+    tsFilePath: tsFilePath,
+    tsText: tsText
+  };
 
-    return moduleFile;
-  });
+  return moduleFile;
 }

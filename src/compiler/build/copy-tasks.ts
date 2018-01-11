@@ -1,15 +1,15 @@
 import { BuildConfig, BuildContext, CopyTask } from '../../util/interfaces';
-import { catchError, ensureDirectoriesExist, normalizePath } from '../util';
+import { catchError, normalizePath } from '../util';
 
 
-export function copyTasks(config: BuildConfig, ctx: BuildContext) {
+export async function copyTasks(config: BuildConfig, ctx: BuildContext) {
   if (!config.copy) {
     config.logger.debug(`copy tasks disabled`);
-    return Promise.resolve();
+    return;
   }
 
   if (!config.generateWWW) {
-    return Promise.resolve();
+    return;
   }
 
   const timeSpan = config.logger.createTimeSpan(`copyTasks started`, true);
@@ -17,39 +17,32 @@ export function copyTasks(config: BuildConfig, ctx: BuildContext) {
 
   const copyTasks = Object.keys(config.copy).map(copyTaskName => config.copy[copyTaskName]);
 
-  return Promise.all(copyTasks.map(copyTask => {
-    return processCopyTasks(config, allCopyTasks, copyTask);
-
-  })).then(() => {
-    const ensureDirectories: string[] = [];
-
-    allCopyTasks.forEach(ct => {
-      const dest = ct.isDirectory ? ct.dest : config.sys.path.dirname(ct.dest);
-      if (ensureDirectories.indexOf(dest) === -1) {
-        ensureDirectories.push(dest);
-      }
-    });
-
-    return ensureDirectoriesExist(config.sys, ensureDirectories, [config.rootDir]);
-
-  }).then(() => {
-    return Promise.all(allCopyTasks.map(copyTask => {
-      return config.sys.copy(copyTask.src, copyTask.dest, { filter: copyTask.filter });
+  try {
+    await Promise.all(copyTasks.map(async copyTask => {
+      return processCopyTasks(config, ctx, allCopyTasks, copyTask);
     }));
 
-  }).catch(err => {
-    catchError(ctx.diagnostics, err);
+    await Promise.all(allCopyTasks.map(ct => {
+      const dir = ct.isDirectory ? ct.dest : config.sys.path.dirname(ct.dest);
+      return ctx.fs.ensureDir(dir);
+    }));
 
-  }).then(() => {
-    timeSpan.finish(`copyTasks finished`);
-  });
+    await Promise.all(allCopyTasks.map(copyTask => {
+      return ctx.fs.copy(copyTask.src, copyTask.dest, { filter: copyTask.filter });
+    }));
+
+  } catch (e) {
+    catchError(ctx.diagnostics, e);
+  }
+
+  timeSpan.finish(`copyTasks finished`);
 }
 
 
-export function processCopyTasks(config: BuildConfig, allCopyTasks: CopyTask[], copyTask: CopyTask): Promise<any> {
+export async function processCopyTasks(config: BuildConfig, ctx: BuildContext, allCopyTasks: CopyTask[], copyTask: CopyTask): Promise<any> {
   if (!copyTask) {
     // possible null was set, which is fine, just skip over this one
-    return Promise.resolve(null);
+    return null;
   }
 
   if (!copyTask.src) {
@@ -68,22 +61,17 @@ export function processCopyTasks(config: BuildConfig, allCopyTasks: CopyTask[], 
 
   const processedCopyTask = processCopyTask(config, copyTask);
 
-  return new Promise(resolve => {
-    config.sys.fs.stat(processedCopyTask.src, (err, stats) => {
-      if (err) {
-        if (copyTask.warn !== false) {
-          config.logger.warn(`copy, ${processedCopyTask.src}: ${err}`);
-        }
-        resolve();
+  try {
+    const stats = await ctx.fs.stat(processedCopyTask.src);
+    processedCopyTask.isDirectory = stats.isDirectory();
+    config.logger.debug(`copy, ${processedCopyTask.src} to ${processedCopyTask.dest}, isDirectory: ${processedCopyTask.isDirectory}`);
+    allCopyTasks.push(processedCopyTask);
 
-      } else {
-        processedCopyTask.isDirectory = stats.isDirectory();
-        config.logger.debug(`copy, ${processedCopyTask.src} to ${processedCopyTask.dest}, isDirectory: ${processedCopyTask.isDirectory}`);
-        allCopyTasks.push(processedCopyTask);
-        resolve();
-      }
-    });
-  });
+  } catch (e) {
+    if (copyTask.warn !== false) {
+      config.logger.warn(`copy, ${processedCopyTask.src}: ${e}`);
+    }
+  }
 }
 
 
@@ -192,9 +180,7 @@ export function isCopyTaskFile(config: BuildConfig, filePath: string) {
     } else {
       copySrc = normalizePath(getSrcAbsPath(config, copySrc));
 
-      var relPath = config.sys.path.relative(copySrc, filePath);
-
-      if (!relPath.startsWith('.')) {
+      if (!config.sys.path.relative(copySrc, filePath).startsWith('.')) {
         return true;
       }
     }

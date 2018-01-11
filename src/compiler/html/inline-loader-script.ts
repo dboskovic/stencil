@@ -51,7 +51,7 @@ function relocateInlineLoaderScript(config: BuildConfig, ctx: BuildContext, doc:
     // didn't find a cached version
     try {
       // let's look it up directly
-      content = config.sys.fs.readFileSync(appLoaderWWW, 'utf-8');
+      content = ctx.fs.readFileSync(appLoaderWWW);
 
       // cool we found content, let's cache it for later
       ctx.appFiles[appLoaderWWW] = content;

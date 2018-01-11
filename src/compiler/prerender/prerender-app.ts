@@ -1,5 +1,5 @@
 import { BuildConfig, BuildContext, HydrateResults, Bundle, PrerenderConfig, PrerenderStatus, PrerenderLocation } from '../../util/interfaces';
-import { buildWarn, catchError, hasError, pathJoin, readFile, writeFiles } from '../util';
+import { buildWarn, catchError, hasError, pathJoin } from '../util';
 import { generateHostConfig } from './host-config';
 import { prerenderPath } from './prerender-path';
 import { crawlAnchorsForNextUrls, getPrerenderQueue } from './prerender-utils';
@@ -29,7 +29,7 @@ export async function prerenderApp(config: BuildConfig, ctx: BuildContext, bundl
   // get the www index html content for the template for all prerendered pages
   let indexHtml: string = null;
   try {
-    indexHtml = await readFile(config.sys, config.wwwIndexHtml);
+    indexHtml = await ctx.fs.readFile(config.wwwIndexHtml);
   } catch (e) {}
 
   if (typeof indexHtml !== 'string') {
@@ -63,14 +63,6 @@ async function runPrerenderApp(config: BuildConfig, ctx: BuildContext, bundles: 
     });
 
     await generateHostConfig(config, ctx, bundles, hydrateResults);
-
-    // create a copy of all the files to write
-    const filesToWrite = Object.assign({}, ctx.filesToWrite);
-
-    // clear out the files to write object for the next build
-    ctx.filesToWrite = {};
-
-    await writeFiles(config.sys, config.rootDir, filesToWrite);
 
   } catch (e) {
     catchError(ctx.diagnostics, e);
@@ -168,5 +160,5 @@ function writePrerenderDest(config: BuildConfig, ctx: BuildContext, results: Hyd
 
   // add the prerender html content it to our collection of
   // files that need to be saved when we're all ready
-  ctx.filesToWrite[filePath] = results.html;
+  ctx.fs.writeFile(filePath, results.html);
 }

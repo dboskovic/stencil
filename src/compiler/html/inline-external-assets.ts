@@ -57,45 +57,28 @@ function getAssetContent(config: BuildConfig, ctx: BuildContext, results: Hydrat
   // figure out the local file path
   const filePath = getFilePathFromUrl(config, fromUrl, toUrl);
 
-  // first see if we already have cached file text
-  // this would happen if it's being prerendered
-  let content = ctx.filesToWrite[filePath];
+  // doesn't look like we've got it cached in app files
+  try {
+    // try looking it up directly
+    let content = ctx.fs.readFileSync(filePath);
 
-  if (!content) {
-    // doesn't look like we've got a copy cached to be written
-    // check if we cached it in our appFiles object
-    content = ctx.appFiles[filePath];
-  }
+    // cool we found it, cache it for later
+    ctx.appFiles[filePath] = content;
 
-  if (!content) {
-    // doesn't look like we've got it cached in app files
-    try {
-      // try looking it up directly
-      content = config.sys.fs.readFileSync(filePath, 'utf-8');
+    // rough estimate of size
+    const fileSize = content.length;
 
-      // cool we found it, cache it for later
-      ctx.appFiles[filePath] = content;
-
-    } catch (e) {
-      // something is up, don't bother trying to inline the content
-      config.logger.debug(`getAssetContent error`, e);
+    if (fileSize > results.opts.inlineAssetsMaxSize) {
+      // welp, considered too big, don't inline
+      return null;
     }
-  }
 
-  if (!content) {
+    return content;
+
+  } catch (e) {
     // never found the content for this file
     return null;
   }
-
-  // rough estimate of size
-  const fileSize = content.length;
-
-  if (fileSize > results.opts.inlineAssetsMaxSize) {
-    // welp, considered too big, don't inline
-    return null;
-  }
-
-  return content;
 }
 
 

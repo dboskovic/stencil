@@ -3,6 +3,7 @@ import { createContext, runInContext } from './node-context';
 import { createDom } from './node-dom';
 import { NodeFileSystem } from './node-fs';
 import { normalizePath } from '../../compiler/util';
+import { BuildEvents } from '../../compiler/events';
 
 
 export class NodeSystem implements StencilSystem {
@@ -11,6 +12,7 @@ export class NodeSystem implements StencilSystem {
   nodePath: any;
   packageJsonData: PackageJsonData;
   packageDistDir: string;
+  runtime: string;
   sysUtil: any;
   typescriptPackageJson: PackageJsonData;
 
@@ -24,7 +26,8 @@ export class NodeSystem implements StencilSystem {
 
   init() {
     const packageRootDir = this.nodePath.join(__dirname, '../../../');
-    this.packageDistDir = this.nodePath.join(packageRootDir, 'dist', 'client');
+    this.packageDistDir = this.nodePath.join(packageRootDir, 'dist/client');
+    this.runtime = this.nodePath.join(packageRootDir, 'dist/compiler/index.js');
 
     try {
       this.packageJsonData = require(this.nodePath.join(packageRootDir, 'package.json'));
@@ -43,6 +46,7 @@ export class NodeSystem implements StencilSystem {
     return {
       name: this.packageJsonData.name,
       version: this.packageJsonData.version,
+      runtime: this.runtime,
       typescriptVersion: this.typescriptPackageJson.version
     };
   }
@@ -67,6 +71,33 @@ export class NodeSystem implements StencilSystem {
 
   createFileSystem() {
     return new NodeFileSystem(this.sysUtil.fsExtra, this.nodePath);
+  }
+
+  createWatcher(events: BuildEvents, paths: string, opts: any) {
+    const chokidar = require('chokidar');
+    const watcher = chokidar.watch(paths, opts);
+
+    watcher
+      .on('change', (path: string) => {
+        events.emit('fileChange', path);
+      })
+      .on('add', (path: string) => {
+        events.emit('fileAdd', path);
+      })
+      .on('unlink', (path: string) => {
+        events.emit('fileDelete', path);
+      })
+      .on('addDir', (path: string) => {
+        events.emit('dirAdd', path);
+      })
+      .on('unlinkDir', (path: string) => {
+        events.emit('dirDelete', path);
+      })
+      .on('error', (err: any) => {
+        console.error(err);
+      });
+
+    return watcher;
   }
 
   emptyDir(dir: any) {
@@ -334,11 +365,6 @@ export class NodeSystem implements StencilSystem {
       createContext,
       runInContext
     };
-  }
-
-  watch(paths: string, opts: any) {
-    const chokidar = require('chokidar');
-    return chokidar.watch(paths, opts);
   }
 
   get workbox() {

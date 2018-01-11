@@ -3,37 +3,37 @@ import { buildError, buildWarn, normalizePath } from '../util';
 import { COLLECTION_DEPENDENCIES_DIR } from '../manifest/manifest-data';
 import { COLLECTION_MANIFEST_FILE_NAME } from '../../util/constants';
 import { getLoaderFileName } from '../app/app-file-naming';
-import { pathJoin, readFile } from '../util';
+import { pathJoin } from '../util';
 
 
 
-export function generateDistribution(config: BuildConfig, ctx: BuildContext): Promise<any> {
+export async function generateDistribution(config: BuildConfig, ctx: BuildContext): Promise<any> {
   if (!config.generateDistribution) {
     // don't bother
-    return Promise.resolve();
+    return;
   }
 
   return Promise.all([
-    readPackageJson(config, ctx.diagnostics),
+    readPackageJson(config, ctx),
     copySourceCollectionComponentsToDistribution(config, ctx),
-    generateTypes(config)
+    generateTypes(config, ctx)
   ]);
 }
 
 
-async function readPackageJson(config: BuildConfig, diagnostics: Diagnostic[]) {
+async function readPackageJson(config: BuildConfig, ctx: BuildContext) {
   const packageJsonPath = config.sys.path.join(config.rootDir, 'package.json');
 
   let packageJsonText: string;
 
   try {
-    packageJsonText = await readFile(config.sys, packageJsonPath);
+    packageJsonText = await ctx.fs.readFile(packageJsonPath);
   } catch (e) {
     throw `Missing "package.json" file for distribution: ${packageJsonPath}`;
   }
 
   const packageJsonData = JSON.parse(packageJsonText);
-  validatePackageJson(config, diagnostics, packageJsonData);
+  validatePackageJson(config, ctx.diagnostics, packageJsonData);
 }
 
 
@@ -121,17 +121,17 @@ function copySourceCollectionComponentsToDistribution(config: BuildConfig, ctx: 
 }
 
 
-async function generateTypes(config: BuildConfig) {
+async function generateTypes(config: BuildConfig, ctx: BuildContext) {
   const PromiseList: Promise<any>[] = [];
 
   // If index.d.ts file exists at the root then copy it.
   try {
-    let indexDtsContent = await readFile(config.sys, config.sys.path.join(config.srcDir, 'index.d.ts'));
+    let indexDtsContent = await ctx.fs.readFile(config.sys.path.join(config.srcDir, 'index.d.ts'));
     if (typeof indexDtsContent === 'string') {
       indexDtsContent = indexDtsContent.trim();
       if (indexDtsContent.length) {
         // don't bother copying this file if there is no content
-        PromiseList.push(config.sys.copy(
+        PromiseList.push(ctx.fs.copy(
           config.sys.path.join(config.srcDir, 'index.d.ts'),
           config.sys.path.join(config.typesDir, 'index.d.ts')
         ));
@@ -140,7 +140,7 @@ async function generateTypes(config: BuildConfig) {
   } catch (e) {}
 
   // copy the generated components.d.ts fiel
-  PromiseList.push(config.sys.copy(
+  PromiseList.push(ctx.fs.copy(
     config.sys.path.join(config.srcDir, COMPONENTS_DTS),
     config.sys.path.join(config.typesDir, COMPONENTS_DTS)
   ));

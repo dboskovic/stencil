@@ -43,13 +43,13 @@ export async function generateCore(config: BuildConfig, ctx: BuildContext, globa
   if (config.generateWWW) {
     // write the www/build/ app core file
     const appCoreWWW = pathJoin(config, getAppWWWBuildDir(config), coreFilename);
-    ctx.filesToWrite[appCoreWWW] = jsContent;
+    await ctx.fs.writeFile(appCoreWWW, jsContent);
   }
 
   if (config.generateDistribution) {
     // write the dist/ app core file
     const appCoreDist = pathJoin(config, getAppDistDir(config), coreFilename);
-    ctx.filesToWrite[appCoreDist] = jsContent;
+    await ctx.fs.writeFile(appCoreDist, jsContent);
   }
 
   return coreFilename;

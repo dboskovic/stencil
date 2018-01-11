@@ -57,7 +57,7 @@ export async function generateAppFiles(config: BuildConfig, ctx: BuildContext, b
   } else if (config.generateWWW) {
     // not doing an es5, probably in dev mode
     // and don't bother if we're not generating a www build
-    appRegistry.corePolyfilled = generateEs5DisabledMessage(config, ctx);
+    appRegistry.corePolyfilled = await generateEs5DisabledMessage(config, ctx);
   }
 
   // create a json file for the app registry

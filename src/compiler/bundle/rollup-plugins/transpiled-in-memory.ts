@@ -1,5 +1,5 @@
 import { BuildConfig, BuildContext, FilesMap } from '../../../util/interfaces';
-import { normalizePath, readFile } from '../../util';
+import { normalizePath } from '../../util';
 
 export default function transpiledInMemoryPlugin(config: BuildConfig, ctx: BuildContext) {
   const sys = config.sys;
@@ -51,7 +51,7 @@ export default function transpiledInMemoryPlugin(config: BuildConfig, ctx: Build
               // ok, we've got a potential absolute path where the file "could" be
               try {
                 // let's see if it actually exists, but with readFileSync :(
-                assetsCache[assetsFilePath] = sys.fs.readFileSync(assetsFilePath, 'utf-8');
+                assetsCache[assetsFilePath] = ctx.fs.readFileSync(assetsFilePath);
                 if (typeof assetsCache[assetsFilePath] === 'string') {
                   return assetsFilePath;
                 }
@@ -80,7 +80,7 @@ export default function transpiledInMemoryPlugin(config: BuildConfig, ctx: Build
       }
 
       // ok so it's not in one of our caches, so let's look it up directly
-      const jsText = await readFile(sys, sourcePath);
+      const jsText = await ctx.fs.readFile(sourcePath);
       ctx.moduleFiles[sourcePath] = {
         jsFilePath: sourcePath,
       };

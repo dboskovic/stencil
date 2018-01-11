@@ -6,20 +6,18 @@ import { loadComponentRegistry } from './load-registry';
 import { validateBuildConfig } from '../util/validate-config';
 
 
-export function createRenderer(config: BuildConfig, ctx?: BuildContext) {
+export function createRenderer(config: BuildConfig, ctx: BuildContext = {}) {
   validateBuildConfig(config);
 
+  // init the build context
+  ctx = getBuildContext(config.sys, ctx);
+
   // load the component registry from the registry.json file
-  const cmpRegistry = loadComponentRegistry(config);
+  const cmpRegistry = loadComponentRegistry(config, ctx);
 
   if (Object.keys(cmpRegistry).length === 0) {
     throw new Error(`No registered components found: ${config.namespace}`);
   }
-
-  ctx = ctx || {};
-
-  // init the buid context
-  getBuildContext(config, ctx);
 
   // load the app global file into the context
   loadAppGlobal(config, ctx);
@@ -69,7 +67,7 @@ function loadAppGlobal(config: BuildConfig, ctx: BuildContext) {
   // let's load the app global js content
   const appGlobalPath = getGlobalWWW(config);
   try {
-    ctx.appFiles.global = config.sys.fs.readFileSync(appGlobalPath, 'utf-8');
+    ctx.appFiles.global = ctx.fs.readFileSync(appGlobalPath);
 
   } catch (e) {
     config.logger.debug(`missing app global: ${appGlobalPath}`);

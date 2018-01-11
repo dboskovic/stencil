@@ -1,5 +1,5 @@
 import { BuildConfig } from '../../../util/interfaces';
-import { isIncludePath } from '../compile';
+import { isFileIncludePath } from '../compile-src';
 import { mockBuildConfig } from '../../../testing/mocks';
 
 
@@ -13,7 +13,7 @@ describe('compile', () => {
 
       const readPath = '/path/to/test/some/module/file.tsx';
 
-      expect(isIncludePath(config, readPath)).toBe(false);
+      expect(isFileIncludePath(config, readPath)).toBe(false);
     });
 
     it('exclude spec file', () => {
@@ -22,7 +22,7 @@ describe('compile', () => {
 
       const readPath = '/path/to/some/module/file.spec.tsx';
 
-      expect(isIncludePath(config, readPath)).toBe(false);
+      expect(isFileIncludePath(config, readPath)).toBe(false);
     });
 
     it('exclude test dir files', () => {
@@ -31,7 +31,7 @@ describe('compile', () => {
 
       const readPath = '/path/to/test/some/module/file.tsx';
 
-      expect(isIncludePath(config, readPath)).toBe(false);
+      expect(isFileIncludePath(config, readPath)).toBe(false);
     });
 
     it('exclude all', () => {
@@ -39,7 +39,7 @@ describe('compile', () => {
       config.excludeSrc = [];
       const readPath = '/path/to/app/src/components/checkbox/checkbox.tsx';
 
-      expect(isIncludePath(config, readPath)).toBe(false);
+      expect(isFileIncludePath(config, readPath)).toBe(false);
     });
 
   });

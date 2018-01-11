@@ -4,7 +4,7 @@ import { help } from './task-help';
 import { initApp } from './task-init';
 
 
-export function run(process: NodeJS.Process, sys: StencilSystem, logger: Logger, compiler: any) {
+export async function run(process: NodeJS.Process, sys: StencilSystem, logger: Logger) {
   const task = process.argv[2];
   const argv = parseArgv(process);
 
@@ -54,9 +54,13 @@ export function run(process: NodeJS.Process, sys: StencilSystem, logger: Logger,
     config.sys = sys;
   }
 
+  const { Compiler } = await import('../compiler/index.js');
+
+  const compiler = new Compiler(config);
+
   switch (task) {
     case 'build':
-      compiler.build(config).then((results: BuildResults) => {
+      compiler.build().then((results: BuildResults) => {
         if (!config.watch && hasError(results && results.diagnostics)) {
           process.exit(1);
         }
@@ -74,8 +78,7 @@ export function run(process: NodeJS.Process, sys: StencilSystem, logger: Logger,
       break;
 
     case 'docs':
-      config.generateDocs = true;
-      compiler.docs(config).catch((err: any) => {
+      compiler.docs().catch((err: any) => {
         config.logger.error(err);
       });
       break;

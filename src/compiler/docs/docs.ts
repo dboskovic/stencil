@@ -1,14 +1,14 @@
-import { BuildConfig } from '../../util/interfaces';
+import { BuildConfig, BuildContext } from '../../util/interfaces';
 import { catchError, getBuildContext, hasError, resetBuildContext } from '../util';
 import { cleanDiagnostics } from '../../util/logger/logger-util';
-import { compileSrcDir } from '../build/compile';
+import { compileSrcDir } from '../build/compile-src';
 import { generateReadmes } from './generate-readmes';
 import { generateHtmlDiagnostics } from '../../util/logger/generate-html-diagnostics';
 import { isConfigValid } from '../build/build';
 
 
-export function docs(config: BuildConfig) {
-  const ctx = getBuildContext(config, {});
+export function docs(config: BuildConfig, ctx: BuildContext) {
+  ctx = getBuildContext(config.sys, ctx);
   resetBuildContext(ctx);
 
   config.logger.info(config.logger.cyan(`${config.sys.compiler.name} v${config.sys.compiler.version}`));

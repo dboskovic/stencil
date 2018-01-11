@@ -1,5 +1,5 @@
 import { BuildConfig, BuildContext, ServiceWorkerConfig } from '../../util/interfaces';
-import { catchError, hasError, readFile } from '../util';
+import { catchError, hasError } from '../util';
 import { injectRegisterServiceWorker, injectUnregisterServiceWorker } from '../service-worker/inject-sw-script';
 import { generateServiceWorker } from '../service-worker/generate-sw';
 
@@ -16,7 +16,7 @@ export async function generateIndexHtml(config: BuildConfig, ctx: BuildContext) 
 
   // get the source index html content
   try {
-    const indexSrcHtml = await readFile(config.sys, config.srcIndexHtml);
+    const indexSrcHtml = await ctx.fs.readFile(config.srcIndexHtml);
 
     try {
       setIndexHtmlContent(config, ctx, indexSrcHtml);
@@ -44,17 +44,8 @@ function setIndexHtmlContent(config: BuildConfig, ctx: BuildContext, indexHtml: 
     indexHtml = injectRegisterServiceWorker(config, swConfig, indexHtml);
   }
 
-  if (ctx.appFiles.indexHtml === indexHtml) {
-    // only write to disk if the html content is different than last time
-    return;
-  }
-
   // add the prerendered html to our list of files to write
-  // and cache the html to check against for next time
-  ctx.filesToWrite[config.wwwIndexHtml] = ctx.appFiles.indexHtml = indexHtml;
+  ctx.fs.writeFile(config.wwwIndexHtml, indexHtml);
 
-  // keep track of how many times we built the index file
-  // useful for debugging/testing
-  ctx.indexBuildCount++;
   config.logger.debug(`optimizeHtml, write: ${config.wwwIndexHtml}`);
 }

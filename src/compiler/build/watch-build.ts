@@ -1,158 +1,9 @@
 import { build } from './build';
-import { BuildConfig, BuildContext } from '../../util/interfaces';
-import { copyTasks, isCopyTaskFile } from './copy-tasks';
-import { isCssFile, isHtmlFile, isSassFile, isTsFile, isWebDevFile, normalizePath } from '../util';
+import { BuildConfig, BuildContext, BuildResults } from '../../util/interfaces';
+import { isCssFile, isHtmlFile, isSassFile, isTsFile } from '../util';
 
 
-export function setupWatcher(config: BuildConfig, ctx: BuildContext) {
-  // only create the watcher if this is a watch build
-  // and we haven't created a watcher yet
-  if (!config.watch || ctx.watcher) return;
-
-  config.logger.debug(`setupWatcher: ${config.srcDir}`);
-
-  const logger = config.logger;
-  let queueChangeBuild = false;
-  let queueFullBuild = false;
-
-  ctx.watcher = config.sys.watch(config.srcDir, {
-    ignored: config.watchIgnoredRegex,
-    ignoreInitial: true
-  });
-
-  if (config.configPath) {
-    config.configPath = normalizePath(config.configPath);
-    config.logger.debug(`watch configPath: ${config.configPath}`);
-    ctx.watcher.add(config.configPath);
-  }
-
-  ctx.watcher
-    .on('change', (path: string) => {
-      path = normalizePath(path);
-      logger.debug(`watcher, change: ${path}, ${Date.now()}`);
-
-      if (path === config.configPath) {
-        // the actual stencil config file changed
-        // this is a big deal, so do a full rebuild
-        configFileReload(config);
-        queueFullBuild = true;
-        queue();
-        return;
-      }
-
-      if (isCopyTaskFile(config, path)) {
-        startCopyTasks();
-
-      } else if (isWebDevFile(path)) {
-        // web dev file was updaed
-        // queue change build
-        queueChangeBuild = true;
-        queue(path);
-      }
-
-    })
-    .on('unlink', (path: string) => {
-      logger.debug(`watcher, unlink: ${path}, ${Date.now()}`);
-
-      if (isCopyTaskFile(config, path)) {
-        startCopyTasks();
-
-      } else if (isWebDevFile(path)) {
-        // web dev file was delete
-        // do a full rebuild
-        queueFullBuild = true;
-        queue();
-      }
-    })
-    .on('add', (path: string) => {
-      logger.debug(`watcher, add: ${path}, ${Date.now()}`);
-
-      if (isCopyTaskFile(config, path)) {
-        startCopyTasks();
-
-      } else if (isWebDevFile(path)) {
-        // new web dev file was added
-        // do a full rebuild
-        queueFullBuild = true;
-        queue();
-      }
-    })
-    .on('addDir', (path: string) => {
-      logger.debug(`watcher, addDir: ${path}, ${Date.now()}`);
-
-      if (isCopyTaskFile(config, path)) {
-        startCopyTasks();
-
-      } else {
-        // no clue what's up, do a full rebuild
-        queueFullBuild = true;
-        queue();
-      }
-    })
-    .on('unlinkDir', (path: string) => {
-      logger.debug(`watcher, unlinkDir: ${path}, ${Date.now()}`);
-
-      if (isCopyTaskFile(config, path)) {
-        startCopyTasks();
-
-      } else {
-        // no clue what's up, do a full rebuild
-        queueFullBuild = true;
-        queue();
-      }
-    })
-    .on('error', (err: any) => {
-      logger.error(err);
-    });
-
-
-  let timer: any;
-  const changedFiles: string[] = [];
-
-  function queue(path?: string) {
-    // debounce builds
-    clearTimeout(timer);
-
-    if (path && changedFiles.indexOf(path) === -1) {
-      path = normalizePath(path);
-      changedFiles.push(path);
-    }
-
-    timer = setTimeout(() => {
-      try {
-        const changedFileCopies = changedFiles.slice();
-        changedFiles.length = 0;
-
-        if (queueFullBuild) {
-          watchBuild(config, ctx, true, changedFileCopies);
-
-        } else if (queueChangeBuild) {
-          watchBuild(config, ctx, false, changedFileCopies);
-        }
-
-        // reset
-        queueFullBuild = queueChangeBuild = false;
-
-      } catch (e) {
-        logger.error(e.toString());
-      }
-
-    }, 50);
-  }
-
-  var copyTaskTmr: any;
-  function startCopyTasks() {
-    clearTimeout(copyTaskTmr);
-
-    copyTaskTmr = setTimeout(() => {
-      copyTasks(config, ctx);
-    }, 80);
-  }
-
-}
-
-
-function watchBuild(config: BuildConfig, ctx: BuildContext, requiresFullBuild: boolean, changedFiles: string[]) {
+export function watchBuild(config: BuildConfig, ctx: BuildContext, requiresFullBuild: boolean, changedFiles: string[]): Promise<BuildResults> {
   // always reset to do a full build
   ctx.isRebuild = true;
   ctx.isChangeBuild = false;
@@ -254,7 +105,7 @@ function watchBuild(config: BuildConfig, ctx: BuildContext, requiresFullBuild: b
 }
 
 
-function configFileReload(config: BuildConfig) {
+export function watchConfigFileReload(config: BuildConfig) {
   config.logger.debug(`reload config file: ${config.configPath}`);
 
   try {

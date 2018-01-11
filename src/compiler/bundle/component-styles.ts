@@ -1,5 +1,5 @@
 import { BuildContext, BuildConfig, ComponentMeta, ModuleFile, StyleMeta } from '../../util/interfaces';
-import { buildError, isCssFile, isSassFile, readFile, normalizePath } from '../util';
+import { buildError, isCssFile, isSassFile, normalizePath } from '../util';
 import { ENCAPSULATION } from '../../util/constants';
 import { scopeComponentCss } from '../css/scope-css';
 
@@ -45,7 +45,7 @@ async function compileExternalStyles(config: BuildConfig, ctx: BuildContext, mod
 
     if (isCssFile(filePath)) {
       // plain ol' css file
-      return readCssFile(config, ctx, filePath);
+      return readCssFile(ctx, filePath);
     }
 
     // idk
@@ -97,9 +97,9 @@ export function requiresScopedStyles(encapsulation: ENCAPSULATION) {
 }
 
 
-function compileSassFile(config: BuildConfig, ctx: BuildContext, jsFilePath: string, absStylePath: string): Promise<string> {
+async function compileSassFile(config: BuildConfig, ctx: BuildContext, jsFilePath: string, absStylePath: string) {
 
-  if (ctx.isChangeBuild && !ctx.changeHasSass && ctx.compiledFileCache[absStylePath]) {
+  if (ctx.isChangeBuild && !ctx.changeHasSass && await ctx.fs.access(absStylePath)) {
     // if this is a change build, but there wasn't specifically a sass file change
     // however we may still need to build sass if its typescript module changed
 
@@ -116,11 +116,11 @@ function compileSassFile(config: BuildConfig, ctx: BuildContext, jsFilePath: str
     if (!hasChangedFileName) {
       // don't bother running sass on this, none of the changed files have the same filename
       // use the cached version
-      return Promise.resolve(ctx.compiledFileCache[absStylePath]);
+      return ctx.fs.readFile(absStylePath);
     }
   }
 
-  return new Promise(resolve => {
+  return new Promise<string>(resolve => {
     const sassConfig = {
       ...config.sassConfig,
       file: absStylePath,
@@ -138,33 +138,23 @@ function compileSassFile(config: BuildConfig, ctx: BuildContext, jsFilePath: str
         // keep track of how many times sass builds
         ctx.sassBuildCount++;
 
-        // cache for later
-        ctx.compiledFileCache[absStylePath] = result.css.toString();
+        const css = result.css.toString();
 
         // resolve w/ our compiled sass
-        resolve(ctx.compiledFileCache[absStylePath]);
+        resolve(css);
       }
     });
   });
 }
 
 
-async function readCssFile(config: BuildConfig, ctx: BuildContext, absStylePath: string) {
-  if (ctx.isChangeBuild && !ctx.changeHasCss && ctx.compiledFileCache[absStylePath]) {
-    // if this is a change build, but there were no css changes so don't bother
-    // and we have cached content for this file
-    return ctx.compiledFileCache[absStylePath];
-  }
-
-  let styleText: string = '';
+async function readCssFile(ctx: BuildContext, absStylePath: string) {
+  let styleText = '';
 
   try {
     // this is just a plain css file
     // only open it up for its content
-    styleText = await readFile(config.sys, absStylePath);
-
-    // cache for later
-    ctx.compiledFileCache[absStylePath] = styleText;
+    styleText = await ctx.fs.readFile(absStylePath);
 
   } catch (e) {
     const d = buildError(ctx.diagnostics);

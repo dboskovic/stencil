@@ -21,14 +21,14 @@ export async function generateAppGlobalScript(config: BuildConfig, ctx: BuildCon
       const appGlobalWWWFilePath = getGlobalWWW(config);
 
       config.logger.debug(`build, app global www: ${appGlobalWWWFilePath}`);
-      ctx.filesToWrite[appGlobalWWWFilePath] = globalJsContent;
+      await ctx.fs.writeFile(appGlobalWWWFilePath, globalJsContent);
     }
 
     if (config.generateDistribution) {
       const appGlobalDistFilePath = getGlobalDist(config);
 
       config.logger.debug(`build, app global dist: ${appGlobalDistFilePath}`);
-      ctx.filesToWrite[appGlobalDistFilePath] = globalJsContent;
+      await ctx.fs.writeFile(appGlobalDistFilePath, globalJsContent);
     }
   }
 
@@ -104,7 +104,7 @@ function bundleProjectGlobal(config: BuildConfig, ctx: BuildContext, sourceTarge
     onwarn: createOnWarnFn(ctx.diagnostics)
 
   }).catch(err => {
-    loadRollupDiagnostics(config, ctx.diagnostics, err);
+    loadRollupDiagnostics(config, ctx, err);
   })
 
   .then(rollupBundle => {

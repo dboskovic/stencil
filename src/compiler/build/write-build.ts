@@ -1,5 +1,5 @@
 import { BuildConfig, BuildContext, BuildResults } from '../../util/interfaces';
-import { catchError, writeFiles } from '../util';
+import { catchError } from '../util';
 import { copyComponentAssets } from '../component-plugins/assets-plugin';
 import { generateDistribution } from './distribution';
 import { writeAppManifest } from '../manifest/manifest-data';
@@ -7,26 +7,32 @@ import { writeAppManifest } from '../manifest/manifest-data';
 
 export async function writeBuildFiles(config: BuildConfig, ctx: BuildContext, buildResults: BuildResults) {
   // serialize and write the manifest file if need be
-  writeAppManifest(config, ctx, buildResults);
+  writeAppManifest(config, ctx);
 
-  buildResults.files = Object.keys(ctx.filesToWrite).sort();
-  const totalFilesToWrite = buildResults.files.length;
+  const timeSpan = config.logger.createTimeSpan(`writeBuildFiles started`, true);
 
-  const timeSpan = config.logger.createTimeSpan(`writeBuildFiles started, fileUpdates: ${totalFilesToWrite}`, true);
+  // congrats, another successful build
+  ctx.buildCount++;
 
-  // create a copy of all the files to write
-  const filesToWrite = Object.assign({}, ctx.filesToWrite);
-
-  // clear out the files to write object for the next build
-  ctx.filesToWrite = {};
-
-  // 1) destination directory has already been emptied earlier in the build
-  // 2) write all of the files
-  // 3) copy all of the assets
-  // not doing write and copy at the same time incase they
-  // both try to create the same directory at the same time
+  let totalFilesWrote = 0;
   try {
-    await writeFiles(config.sys, config.rootDir, filesToWrite);
+    const files = await ctx.fs.commit();
+
+    totalFilesWrote = files.length;
+
+    if (config.logger.level === 'debug') {
+      buildResults.stats.files = files;
+
+      ctx.manifest.bundles.forEach(b => {
+        b.components.forEach(c => buildResults.stats.components.push(c));
+      });
+      buildResults.stats.components.sort();
+
+      buildResults.stats.buildCount = ctx.buildCount;
+      buildResults.stats.bundleBuildCount = ctx.bundleBuildCount;
+      buildResults.stats.transpileBuildCount = ctx.transpileBuildCount;
+      buildResults.stats.sassBuildCount = ctx.sassBuildCount;
+    }
 
   } catch (e) {
     catchError(ctx.diagnostics, e);
@@ -39,7 +45,7 @@ export async function writeBuildFiles(config: BuildConfig, ctx: BuildContext, bu
     generateDistribution(config, ctx)
   ]);
 
-  timeSpan.finish(`writeBuildFiles finished`);
+  timeSpan.finish(`writeBuildFiles finished, files wrote: ${totalFilesWrote}`);
 }
 
 

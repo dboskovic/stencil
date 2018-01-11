@@ -4,44 +4,41 @@ import { loadDependentManifests } from './load-dependent-manifests';
 import { mergeDependentManifests } from './merge-manifests';
 
 
-export function generateAppManifest(config: BuildConfig, ctx: BuildContext, moduleFiles: ModuleFiles) {
-  // create the app manifest we're going to fill up with data
-  // the data will be both the app's data, and the collections it depends on
-  ctx.manifest = {
-    modulesFiles: [],
-    bundles: [],
-    global: null,
-    dependentManifests: [],
-    compiler: {
-      name: config.sys.compiler.name,
-      version: config.sys.compiler.version,
-      typescriptVersion: config.sys.compiler.typescriptVersion
+export async function generateAppManifest(config: BuildConfig, ctx: BuildContext, moduleFiles: ModuleFiles) {
+  try {
+    // create the app manifest we're going to fill up with data
+    // the data will be both the app's data, and the collections it depends on
+    ctx.manifest = {
+      modulesFiles: [],
+      bundles: [],
+      global: null,
+      dependentManifests: [],
+      compiler: {
+        name: config.sys.compiler.name,
+        version: config.sys.compiler.version,
+        typescriptVersion: config.sys.compiler.typescriptVersion
+      }
+    };
+
+    if (hasError(ctx.diagnostics)) {
+      return;
     }
-  };
 
-  if (hasError(ctx.diagnostics)) {
-    return Promise.resolve();
-  }
-
-  return Promise.resolve().then(() => {
     // add the app's compiled components to the manifest
     addAppBundles(config, ctx.manifest);
-    return addAppComponents(config, ctx.manifest, moduleFiles);
+    addAppComponents(config, ctx.manifest, moduleFiles);
 
-  }).then(() => {
     // load each of the manifests for each dependent collection
-    return loadDependentManifests(config, ctx);
+    const dependentManifests = await loadDependentManifests(config, ctx);
 
-    }).then(dependentManifests => {
     // merge the loaded dependent manifests
     // into the app's manifest
-    return mergeDependentManifests(ctx.manifest, dependentManifests);
+    mergeDependentManifests(ctx.manifest, dependentManifests);
 
-  }).catch(err => {
+  } catch (e) {
     // ¯\_(ツ)_/¯
-    catchError(ctx.diagnostics, err);
-
-  });
+    catchError(ctx.diagnostics, e);
+  }
 }
 
 

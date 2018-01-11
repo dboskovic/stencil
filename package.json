@@ -36,7 +36,7 @@
     "test.watch": "jest --watch --no-cache"
   },
   "dependencies": {
-    "chokidar": "1.7.0",
+    "chokidar": "2.0.0",
     "jsdom": "11.5.1",
     "node-sass": "4.7.2",
     "rollup": "0.53.2",
@@ -65,7 +65,6 @@
     "jest-environment-node-debug": "^2.0.0",
     "knuth-shuffle": "1.0.1",
     "listr": "^0.13.0",
-    "memory-fs": "^0.4.1",
     "minimatch": "^3.0.4",
     "node-fetch": "^1.7.3",
     "read-pkg-up": "^2.0.0",
@@ -103,6 +102,6 @@
     "transform": {
       "^.+\\.(ts|tsx)$": "<rootDir>/scripts/jest.preprocessor.js"
     },
-    "testRegex": "/src/.*\\.spec\\.(ts|tsx|js)$"
+    "testRegex": "src/compiler/build/test/rebuild.spec.ts"
   }
 }

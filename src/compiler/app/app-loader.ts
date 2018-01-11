@@ -46,13 +46,13 @@ export async function generateLoader(
 
     if (config.generateWWW) {
       const appLoaderWWW = getLoaderWWW(config);
-      ctx.filesToWrite[appLoaderWWW] = loaderContent;
+      await ctx.fs.writeFile(appLoaderWWW, loaderContent);
       ctx.appFiles[appLoaderWWW] = loaderContent;
     }
 
     if (config.generateDistribution) {
       const appLoaderDist = getLoaderDist(config);
-      ctx.filesToWrite[appLoaderDist] = loaderContent;
+      await ctx.fs.writeFile(appLoaderDist, loaderContent);
       ctx.appFiles[appLoaderDist] = loaderContent;
     }
 

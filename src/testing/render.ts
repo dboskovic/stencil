@@ -10,7 +10,7 @@ export async function render(opts: RenderTestOptions): Promise<any> {
   validateRenderOptions(opts);
 
   const config = getTestBuildConfig();
-  const ctx = getBuildContext();
+  const ctx = getBuildContext(config.sys);
   const registry: ComponentRegistry = {};
 
   const hydrateOpts: HydrateOptions = {

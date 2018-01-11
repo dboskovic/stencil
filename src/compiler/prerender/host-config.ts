@@ -1,7 +1,7 @@
 import { BuildConfig, BuildContext, Bundle, HostConfig, HostRule, HostRuleHeader, HydrateComponent, HydrateResults, ServiceWorkerConfig } from '../../util/interfaces';
 import { DEFAULT_STYLE_MODE } from '../../util/constants';
 import { getAppWWWBuildDir, getBundleFilename } from '../app/app-file-naming';
-import { pathJoin, readFile } from '../util';
+import { pathJoin } from '../util';
 
 
 export async function generateHostConfig(config: BuildConfig, ctx: BuildContext, bundles: Bundle[], hydrateResultss: HydrateResults[]) {
@@ -28,9 +28,9 @@ export async function generateHostConfig(config: BuildConfig, ctx: BuildContext,
 
   const hostConfigFilePath = pathJoin(config, config.wwwDir, HOST_CONFIG_FILENAME);
 
-  await mergeUserHostConfigFile(config, hostConfig);
+  await mergeUserHostConfigFile(config, ctx, hostConfig);
 
-  ctx.filesToWrite[hostConfigFilePath] = JSON.stringify(hostConfig, null, 2);
+  ctx.fs.writeFile(hostConfigFilePath, JSON.stringify(hostConfig, null, 2));
 }
 
 
@@ -241,10 +241,10 @@ function addServiceWorkerNoCacheControl(config: BuildConfig, hostConfig: HostCon
 }
 
 
-async function mergeUserHostConfigFile(config: BuildConfig, hostConfig: HostConfig) {
+async function mergeUserHostConfigFile(config: BuildConfig, ctx: BuildContext, hostConfig: HostConfig) {
   const hostConfigFilePath = pathJoin(config, config.srcDir, HOST_CONFIG_FILENAME);
   try {
-    const userHostConfigStr = await readFile(config.sys, hostConfigFilePath);
+    const userHostConfigStr = await ctx.fs.readFile(hostConfigFilePath);
 
     const userHostConfig = JSON.parse(userHostConfigStr) as HostConfig;
 

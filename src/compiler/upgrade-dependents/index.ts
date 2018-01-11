@@ -46,24 +46,17 @@ function createDoUpgrade(config: BuildConfig, ctx: BuildContext, bundles: Bundle
 
     await Promise.all(manifest.modulesFiles.map(async function(moduleFile) {
 
-      return new Promise((resolve, reject) => {
-        config.sys.fs.readFile(moduleFile.jsFilePath, 'utf8', (err, source) => {
-          if (err) {
-            reject(err);
-          } else {
-            let output = '';
+      const source = await ctx.fs.readFile(moduleFile.jsFilePath);
 
-            try {
-              output = transformSourceString(moduleFile.jsFilePath, source, upgradeTransforms);
-            } catch (e) {
-              config.logger.error(`error performing compiler upgrade on ${moduleFile.jsFilePath}: ${e}`);
-            }
-            ctx.jsFiles[moduleFile.jsFilePath] = output;
+      let output = '';
 
-            resolve();
-          }
-        });
-      });
+      try {
+        output = transformSourceString(moduleFile.jsFilePath, source, upgradeTransforms);
+      } catch (e) {
+        config.logger.error(`error performing compiler upgrade on ${moduleFile.jsFilePath}: ${e}`);
+      }
+      ctx.jsFiles[moduleFile.jsFilePath] = output;
+
     }));
   };
 }

@@ -1,15 +1,13 @@
 import { BANNER } from '../util/constants';
-import { BuildConfig, BuildContext, Diagnostic, FilesMap, StencilSystem } from '../util/interfaces';
+import { BuildConfig, BuildContext, Diagnostic, StencilSystem } from '../util/interfaces';
+import { BuildEvents } from './events';
 
 
-export function getBuildContext(config: BuildConfig, ctx?: BuildContext) {
-  // create the build context if it doesn't exist
-  ctx = ctx || {};
-
-  ctx.fs = ctx.fs || config.sys.createFileSystem();
+export function getBuildContext(sys: StencilSystem, ctx: BuildContext = {}) {
+  ctx.fs = ctx.fs || sys.createFileSystem();
+  ctx.events = ctx.events || new BuildEvents();
   ctx.diagnostics = ctx.diagnostics || [];
   ctx.manifest = ctx.manifest || {};
-  ctx.filesToWrite = ctx.filesToWrite || {};
   ctx.appFiles = ctx.appFiles || {};
   ctx.appGlobalStyles = ctx.appGlobalStyles || {};
   ctx.coreBuilds = ctx.coreBuilds || {};
@@ -17,10 +15,14 @@ export function getBuildContext(config: BuildConfig, ctx?: BuildContext) {
   ctx.jsFiles = ctx.jsFiles || {};
   ctx.rollupCache = ctx.rollupCache || {};
   ctx.dependentManifests = ctx.dependentManifests || {};
-  ctx.compiledFileCache = ctx.compiledFileCache || {};
   ctx.moduleBundleOutputs = ctx.moduleBundleOutputs || {};
   ctx.moduleBundleLegacyOutputs = ctx.moduleBundleLegacyOutputs || {};
   ctx.changedFiles = ctx.changedFiles || [];
+
+  if (typeof ctx.buildCount !== 'number') {
+    ctx.buildCount = 0;
+  }
+  console.log('ctx.buildCount', ctx.buildCount)
 
   return ctx;
 }
@@ -32,160 +34,8 @@ export function resetBuildContext(ctx: BuildContext) {
   ctx.sassBuildCount = 0;
   ctx.transpileBuildCount = 0;
   ctx.indexBuildCount = 0;
-  ctx.moduleBundleCount = 0;
+  ctx.bundleBuildCount = 0;
   delete ctx.localPrerenderServer;
-}
-
-
-export function readFile(sys: StencilSystem, filePath: string) {
-  return new Promise<string>((resolve, reject) => {
-    sys.fs.readFile(filePath, 'utf-8', (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
-  });
-}
-
-
-export async function writeFiles(sys: StencilSystem, rootDir: string, filesToWrite: FilesMap): Promise<any> {
-  const directories = getDirectoriesFromFiles(sys, filesToWrite);
-  await ensureDirectoriesExist(sys, directories, [rootDir]);
-  await writeToDisk(sys, filesToWrite);
-}
-
-
-function writeToDisk(sys: StencilSystem, filesToWrite: FilesMap): Promise<any> {
-  // assumes directories to be saved in already exit
-  return new Promise((resolve, reject) => {
-    const filePathsToWrite = Object.keys(filesToWrite);
-
-    let doneWriting = 0;
-    let rejected = false;
-
-    if (!filePathsToWrite.length) {
-      // shouldn't be possible, but ya never know
-      resolve();
-      return;
-    }
-
-    filePathsToWrite.forEach(filePathToWrite => {
-      sys.fs.writeFile(filePathToWrite, filesToWrite[filePathToWrite], (err) => {
-        if (err) {
-          rejected = true;
-          reject(err);
-
-        } else {
-          doneWriting++;
-          if (doneWriting >= filePathsToWrite.length && !rejected) {
-            resolve();
-          }
-        }
-      });
-    });
-  });
-}
-
-
-export function ensureDirectoriesExist(sys: StencilSystem, directories: string[], existingDirectories: string[]) {
-  return new Promise(resolve => {
-
-    const knowExistingDirPaths = existingDirectories.map(existingDirectory => {
-      return normalizePath(existingDirectory).split('/');
-    });
-
-    const checkDirectories = sortDirectories(directories).slice();
-
-    function ensureDir() {
-      if (checkDirectories.length === 0) {
-        resolve();
-        return;
-      }
-
-      // double check this path has been normalized with / paths
-      const checkDirectory = normalizePath(checkDirectories.shift());
-
-      const dirPaths = checkDirectory.split('/');
-      let pathSections = 1;
-
-      function ensureSection() {
-        if (pathSections > dirPaths.length) {
-          ensureDir();
-          return;
-        }
-
-        const checkDirPaths = dirPaths.slice(0, pathSections);
-
-        // should have already been normalized to / paths
-        const dirPath = checkDirPaths.join('/');
-
-        for (var i = 0; i < knowExistingDirPaths.length; i++) {
-          var existingDirPaths = knowExistingDirPaths[i];
-          var alreadyExists = true;
-
-          for (var j = 0; j < checkDirPaths.length; j++) {
-            if (checkDirPaths[j] !== existingDirPaths[j]) {
-              alreadyExists = false;
-              break;
-            }
-          }
-
-          if (alreadyExists) {
-            pathSections++;
-            ensureSection();
-            return;
-          }
-        }
-
-        sys.fs.mkdir(normalizePath(dirPath), () => {
-          // not worrying about the error here
-          // if there's an error, it's probably because this directory already exists
-          // which is what we want, no need to check access AND mkdir
-          // should have already been normalized to / paths
-          knowExistingDirPaths.push(dirPath.split('/'));
-          pathSections++;
-          ensureSection();
-        });
-      }
-
-      ensureSection();
-    }
-
-    ensureDir();
-  });
-}
-
-
-function getDirectoriesFromFiles(sys: StencilSystem, filesToWrite: FilesMap) {
-  const directories: string[] = [];
-
-  Object.keys(filesToWrite).forEach(filePath => {
-    const dir = normalizePath(sys.path.dirname(filePath));
-    if (directories.indexOf(dir) === -1) {
-      directories.push(dir);
-    }
-  });
-
-  return directories;
-}
-
-
-function sortDirectories(directories: string[]) {
-  return directories.sort((a, b) => {
-    // should have already been normalized to / paths
-    const aPaths = a.split('/').length;
-    const bPaths = b.split('/').length;
-
-    if (aPaths < bPaths) return -1;
-    if (aPaths > bPaths) return 1;
-
-    if (a < b) return -1;
-    if (a > b) return 1;
-
-    return 0;
-  });
 }
 
 

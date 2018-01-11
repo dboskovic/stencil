@@ -37,7 +37,7 @@ export async function generateComponentModules(config: BuildConfig, ctx: BuildCo
   }
 
   // keep track of module bundling for testing
-  ctx.moduleBundleCount++;
+  ctx.bundleBuildCount++;
 
   // run rollup, but don't generate yet
   // returned rollup bundle can be reused for es module and legacy

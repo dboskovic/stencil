@@ -1,13 +1,16 @@
-import { FileSystem } from '../../util/interfaces';
+import { InMemoryFileSystem, FileSystem } from '../../util/interfaces';
 import { normalizePath } from '../../compiler/util';
 
 
-export class NodeFileSystem implements FileSystem {
+// for whatever reasons, something in
+// node/whatever crashes with memory issues
+// when using async/await. Whatever, promies it is
+export class NodeFileSystem implements InMemoryFileSystem {
   private d: { [filePath: string]: FSItem; } = {};
   private ensuredDirs: string[] = [];
   private writeTasks: WriteTask[] = [];
 
-  constructor(private fsExtra: any, private nodePath: any) {}
+  constructor(public disk: FileSystem, private nodePath: any) {}
 
   async access(filePath: string) {
     filePath = normalizePath(filePath);
@@ -17,19 +20,17 @@ export class NodeFileSystem implements FileSystem {
 
     let hasAccess = false;
     try {
-      const s = await this.fsExtra.stat(filePath);
+      const s = await this.stat(filePath);
       this.d[filePath] = {
         exists: true,
-        isFile: s.isFile(),
-        isDirectory: s.isDirectory()
+        isDirectory: s.isDirectory(),
+        isFile: s.isFile()
       };
       hasAccess = true;
 
     } catch (e) {
       this.d[filePath] = {
-        exists: false,
-        isDirectory: false,
-        isFile: false
+        exists: false
       };
     }
 
@@ -44,13 +45,13 @@ export class NodeFileSystem implements FileSystem {
 
     let hasAccess = false;
     try {
-      const s = this.fsExtra.statSync(filePath);
+      const s = this.statSync(filePath);
       this.d[filePath] = {
         exists: true,
-        isFile: s.isFile(),
-        isDirectory: s.isDirectory()
+        isDirectory: s.isDirectory(),
+        isFile: s.isFile()
       };
-      return true;
+      hasAccess = true;
 
     } catch (e) {
       this.d[filePath] = {
@@ -66,19 +67,19 @@ export class NodeFileSystem implements FileSystem {
   async copy(src: string, dest: string, opts?: { filter?: (src: string, dest?: string) => boolean; }) {
     src = normalizePath(src);
     dest = normalizePath(dest);
-    return this.fsExtra.copy(src, dest, opts);
+    return this.disk.copy(src, dest, opts);
   }
 
   async emptyDir(dirPath: string) {
     dirPath = normalizePath(dirPath);
     this.clearDirCache(dirPath);
-    return this.fsExtra.emptyDir(dirPath);
+    return this.disk.emptyDir(dirPath);
   }
 
   async ensureDir(dirPath: string) {
     dirPath = normalizePath(dirPath);
 
-    if (this.ensuredDirs.includes(dirPath)) {
+    if (this.ensuredDirs.indexOf(dirPath) > -1) {
       return;
     }
     this.ensuredDirs.push(dirPath);
@@ -88,13 +89,13 @@ export class NodeFileSystem implements FileSystem {
       isDirectory: true,
       isFile: false
     };
-    return this.fsExtra.ensureDir(dirPath);
+    return this.disk.ensureDir(dirPath);
   }
 
   ensureDirSync(dirPath: string) {
     dirPath = normalizePath(dirPath);
 
-    if (this.ensuredDirs.includes(dirPath)) {
+    if (this.ensuredDirs.indexOf(dirPath) > -1) {
       return;
     }
     this.ensuredDirs.push(dirPath);
@@ -104,14 +105,14 @@ export class NodeFileSystem implements FileSystem {
       isDirectory: true,
       isFile: false
     };
-   return this.fsExtra.ensureDirSync(dirPath);
+   return this.disk.ensureDirSync(dirPath);
   }
 
   async ensureFile(dirPath: string) {
     dirPath = normalizePath(dirPath);
 
     if (!this.d[dirPath] || !this.d[dirPath].exists) {
-      await this.fsExtra.ensureFile(dirPath);
+      await this.disk.ensureFile(dirPath);
       this.d[dirPath] = {
         exists: true,
         isDirectory: false,
@@ -122,7 +123,7 @@ export class NodeFileSystem implements FileSystem {
 
   async readdir(dirPath: string) {
     dirPath = normalizePath(dirPath);
-    const dirItems: string[] = await this.fsExtra.readdir(dirPath);
+    const dirItems = await this.disk.readdir(dirPath);
     this.d[dirPath] = {
       exists: true,
       isFile: false,
@@ -144,15 +145,15 @@ export class NodeFileSystem implements FileSystem {
       return f.fileContent;
     }
 
-    const fileContent = await this.fsExtra.readFile(filePath, 'utf-8');
+    return this.disk.readFile(filePath, 'utf-8').then((fileContent: string) => {
+      f = this.d[filePath] = this.d[filePath] || {};
+      f.exists = true;
+      f.isFile = true;
+      f.isDirectory = false;
+      f.fileContent = fileContent;
 
-    f = this.d[filePath] = this.d[filePath] || {};
-    f.exists = true;
-    f.isFile = true;
-    f.isDirectory = false;
-    f.fileContent = fileContent;
-
-    return fileContent;
+      return fileContent;
+    });
   }
 
   readFileSync(filePath: string) {
@@ -162,7 +163,7 @@ export class NodeFileSystem implements FileSystem {
       return f.fileContent;
     }
 
-    const fileContent = this.fsExtra.readFileSync(filePath, 'utf-8');
+    const fileContent = this.disk.readFileSync(filePath, 'utf-8');
 
     f = this.d[filePath] = this.d[filePath] || {};
     f.exists = true;
@@ -177,18 +178,19 @@ export class NodeFileSystem implements FileSystem {
     itemPath = normalizePath(itemPath);
 
     let f = this.d[itemPath];
-    if (!f) {
-      const s = await this.fsExtra.stat(itemPath);
-      f = this.d[itemPath] = {
+    if (!f || typeof f.isDirectory !== 'boolean' || typeof f.isFile !== 'boolean') {
+      const s = await this.disk.stat(itemPath);
+      this.d[itemPath] = {
         exists: true,
         isFile: s.isFile(),
         isDirectory: s.isDirectory()
       };
+      return s;
     }
 
     return {
-      isFile: f.isFile,
-      isDirectory: f.isDirectory
+      isFile: () => f.isFile,
+      isDirectory: () => f.isDirectory
     };
   }
 
@@ -196,8 +198,8 @@ export class NodeFileSystem implements FileSystem {
     itemPath = normalizePath(itemPath);
 
     let f = this.d[itemPath];
-    if (!f) {
-      const s = this.fsExtra.statSync(itemPath);
+    if (!f || typeof f.isDirectory !== 'boolean' || typeof f.isFile !== 'boolean') {
+      const s = this.disk.statSync(itemPath);
       f = this.d[itemPath] = {
         exists: true,
         isFile: s.isFile(),
@@ -206,8 +208,8 @@ export class NodeFileSystem implements FileSystem {
     }
 
     return {
-      isFile: f.isFile,
-      isDirectory: f.isDirectory
+      isFile: () => f.isFile,
+      isDirectory: () => f.isDirectory
     };
   }
 
@@ -246,38 +248,33 @@ export class NodeFileSystem implements FileSystem {
     d.fileContent = content;
 
     this.ensureDirSync(this.nodePath.dirname(filePath));
-    this.fsExtra.writeFileSync(filePath, content);
+    this.disk.writeFileSync(filePath, content);
   }
 
-  private async ensureDirsForWriteTasks() {
+  async commit() {
     const dirs: string[] = [];
 
     this.writeTasks.forEach(writeTask => {
       const dir = this.nodePath.dirname(writeTask.filePath);
 
-      if (!dirs.includes(dir)) {
+      if (dirs.indexOf(dir) === -1) {
         dirs.push(dir);
       }
     });
 
-    return Promise.all(dirs.map(dir => {
+    await Promise.all(dirs.map(dir => {
       return this.ensureDir(dir);
     }));
-  }
 
-  async commit() {
     this.ensuredDirs.length = 0;
     const wroteFiles: string[] = [];
 
-    await this.ensureDirsForWriteTasks();
-
-    await Promise.all(this.writeTasks.map(async writeTask => {
+    await Promise.all(this.writeTasks.map(writeTask => {
       wroteFiles.push(writeTask.filePath);
-      return this.fsExtra.writeFile(writeTask.filePath, writeTask.writeContent);
+      return this.disk.writeFile(writeTask.filePath, writeTask.writeContent);
     }));
 
     this.writeTasks.length = 0;
-
     return wroteFiles.sort();
   }
 
@@ -299,6 +296,10 @@ export class NodeFileSystem implements FileSystem {
     delete this.d[filePath];
   }
 
+  clearCache() {
+    this.d = {};
+    this.ensuredDirs.length = 0;
+  }
 }
 
 

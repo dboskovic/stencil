@@ -32,7 +32,7 @@ export async function runRollup(config: BuildConfig, ctx: BuildContext, bundle: 
     });
 
   } catch (err) {
-    loadRollupDiagnostics(config, ctx.diagnostics, err);
+    loadRollupDiagnostics(config, ctx, err);
   }
 
   if (hasError(ctx.diagnostics) || !rollupBundle) {

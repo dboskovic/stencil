@@ -1,5 +1,5 @@
 import { BuildConfig, BuildContext } from '../../util/interfaces';
-import { catchError, readFile, pathJoin } from '../util';
+import { catchError, pathJoin } from '../util';
 import { getGlobalStyleFilename } from './app-file-naming';
 
 
@@ -10,7 +10,7 @@ export async function generateGlobalStyles(config: BuildConfig, ctx: BuildContex
     return;
   }
 
-  let content = await readStyleContent(config, filePaths);
+  let content = await readStyleContent(ctx, filePaths);
   if (ctx.appGlobalStyles.content === content) {
     return;
   }
@@ -25,13 +25,13 @@ export async function generateGlobalStyles(config: BuildConfig, ctx: BuildContex
     if (config.generateWWW) {
       const wwwFilePath = pathJoin(config, config.buildDir, fileName);
       config.logger.debug(`www global style: ${wwwFilePath}`);
-      ctx.filesToWrite[wwwFilePath] = content;
+      await ctx.fs.writeFile(wwwFilePath, content);
     }
 
     if (config.generateDistribution) {
       const distFilePath = pathJoin(config, config.distDir, fileName);
       config.logger.debug(`dist global style: ${distFilePath}`);
-      ctx.filesToWrite[distFilePath] = content;
+      await ctx.fs.writeFile(distFilePath, content);
     }
 
   } catch (e) {
@@ -61,7 +61,7 @@ function compileGlobalSass(config: BuildConfig, content: string): Promise<string
 }
 
 
-function readStyleContent(config: BuildConfig, filePaths: string[]) {
-  const promises = filePaths.map(filePath => readFile(config.sys, filePath));
+function readStyleContent(ctx: BuildContext, filePaths: string[]) {
+  const promises = filePaths.map(filePath => ctx.fs.readFile(filePath));
   return Promise.all(promises).then(results => results.join('\n'));
 }
