@@ -2,7 +2,7 @@ import { Config, CompilerCtx } from '../../util/interfaces';
 import { catchError, getCompilerCtx, hasError } from '../util';
 import { cleanDiagnostics } from '../../util/logger/logger-util';
 import { generateReadmes } from './generate-readmes';
-import { getBuildContext } from '../build/build';
+import { getBuildContext } from '../build/build-utils';
 import { transpileScanSrc } from '../transpile/transpile-scan-src';
 
 
