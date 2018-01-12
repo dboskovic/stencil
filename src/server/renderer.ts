@@ -1,5 +1,5 @@
 import { Config, CompilerCtx, HydrateOptions, HydrateResults, InMemoryFileSystem, ComponentRegistry } from '../util/interfaces';
-import { catchError, getCompilerContext } from '../compiler/util';
+import { catchError, getCompilerCtx } from '../compiler/util';
 import { getGlobalWWW } from '../compiler/app/app-file-naming';
 import { hydrateHtml } from './hydrate-html';
 import { loadComponentRegistry } from './load-registry';
@@ -16,7 +16,7 @@ export class Renderer {
     validateBuildConfig(config);
 
     // init the build context
-    this.ctx = getCompilerContext(config.sys, ctx);
+    this.ctx = getCompilerCtx(config.sys, ctx);
 
     // load the component registry from the registry.json file
     this.cmpRegistry = loadComponentRegistry(config, this.ctx);

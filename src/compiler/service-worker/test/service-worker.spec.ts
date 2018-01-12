@@ -57,7 +57,7 @@ describe('service worker', () => {
     });
 
 
-    var config: BuildConfig = {
+    var config: Config = {
       sys: mockStencilSystem(),
       wwwDir: '/User/me/app/www/'
     };

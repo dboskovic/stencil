@@ -6,7 +6,7 @@ import { mockLogger, mockStencilSystem } from '../../../testing/mocks';
 
 describe('build-project-files', () => {
   let mockStencilContent: string;
-  let config: BuildConfig;
+  let config: Config;
 
   beforeEach(() => {
     mockStencilContent = `('__APP__')`;
@@ -85,7 +85,7 @@ describe('build-project-files', () => {
     config.fsNamespace = config.namespace.toLowerCase();
     config.publicPath = 'build/';
 
-    let ctx: BuildContext = { appFiles: {} };
+    let ctx: CompilerCtx = { appFiles: {} };
 
     let appRegistry: AppRegistry = {
       core: 'myapp.core.js',

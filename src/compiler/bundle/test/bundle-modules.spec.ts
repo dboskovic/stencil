@@ -12,8 +12,8 @@ describe('bundle-modules', () => {
     const moduleFiles: ModuleFile[] = [];
 
     it('can skip if change build, has cached output, wasnt non-component change, wasnt component module change', () => {
-      const config: BuildConfig = {};
-      const ctx: BuildContext = {
+      const config: Config = {};
+      const ctx: CompilerCtx = {
         isChangeBuild: true,
         moduleBundleOutputs: { cacheKey: 'jstext' },
         changeHasNonComponentModules: false,
@@ -25,8 +25,8 @@ describe('bundle-modules', () => {
     });
 
     it('cannot skip has non component module changes', () => {
-      const config: BuildConfig = {};
-      const ctx: BuildContext = {
+      const config: Config = {};
+      const ctx: CompilerCtx = {
         isChangeBuild: true,
         moduleBundleOutputs: { cacheKey: 'jstext' },
         changeHasNonComponentModules: true
@@ -37,8 +37,8 @@ describe('bundle-modules', () => {
     });
 
     it('cannot skip if it isnt anything cached', () => {
-      const config: BuildConfig = {};
-      const ctx: BuildContext = {
+      const config: Config = {};
+      const ctx: CompilerCtx = {
         isChangeBuild: true,
         moduleBundleOutputs: {}
       };
@@ -48,8 +48,8 @@ describe('bundle-modules', () => {
     });
 
     it('cannot skip if it isnt a change build', () => {
-      const config: BuildConfig = {};
-      const ctx: BuildContext = { isChangeBuild: false };
+      const config: Config = {};
+      const ctx: CompilerCtx = { isChangeBuild: false };
       const cacheKey = 'cacheKey';
       const skip = canSkipBuild(config, ctx, moduleFiles, cacheKey);
       expect(skip).toBe(false);
@@ -58,7 +58,7 @@ describe('bundle-modules', () => {
   });
 
   describe('bundledComponentContainsChangedFile', () => {
-    const config: BuildConfig = {
+    const config: Config = {
       sys: mockStencilSystem()
     };
     const moduleFiles: ModuleFile[] = [

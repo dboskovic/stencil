@@ -223,7 +223,7 @@ describe('prerender', () => {
 
   });
 
-  var config: BuildConfig;
+  var config: Config;
 
   beforeEach(() => {
     config = {

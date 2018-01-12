@@ -1,5 +1,5 @@
 import { Config, CompilerCtx } from '../../util/interfaces';
-import { catchError, getCompilerContext, hasError } from '../util';
+import { catchError, getCompilerCtx, hasError } from '../util';
 import { cleanDiagnostics } from '../../util/logger/logger-util';
 import { generateReadmes } from './generate-readmes';
 import { isConfigValid, getBuildContext } from '../build/build';
@@ -7,7 +7,7 @@ import { transpileScanSrc } from '../transpile/transpile-scan-src';
 
 
 export async function docs(config: Config, compilerCtx: CompilerCtx) {
-  compilerCtx = getCompilerContext(config.sys, compilerCtx);
+  compilerCtx = getCompilerCtx(config.sys, compilerCtx);
   const buildCtx = getBuildContext(config, compilerCtx, null);
 
   config.logger.info(config.logger.cyan(`${config.sys.compiler.name} v${config.sys.compiler.version}`));

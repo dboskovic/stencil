@@ -1,6 +1,6 @@
 import { BuildCtx, BuildResults, CompilerCtx, Config, WatcherResults } from '../../util/interfaces';
 import { bundle } from '../bundle/bundle';
-import { catchError, getCompilerContext, hasError } from '../util';
+import { catchError, getCompilerCtx, hasError } from '../util';
 import { cleanDiagnostics } from '../../util/logger/logger-util';
 import { copyTasks } from './copy-tasks';
 import { emptyDestDir, writeBuildFiles } from './write-build';
@@ -22,7 +22,7 @@ export async function build(config: Config, compilerCtx?: CompilerCtx, watcher?:
   // create the build context if it doesn't exist
   // the buid context is the same object used for all builds and rebuilds
   // ctx is where stuff is cached for fast in-memory lookups later
-  compilerCtx = getCompilerContext(config.sys, compilerCtx);
+  compilerCtx = getCompilerCtx(config.sys, compilerCtx);
 
   // reset the build context, this is important for rebuilds
   const buildCtx = getBuildContext(config, compilerCtx, watcher);

@@ -1,4 +1,4 @@
-import { BuildConfig } from '../../../util/interfaces';
+import { Config } from '../../../util/interfaces';
 import { mockConfig } from '../../../testing/mocks';
 import { validateBuildConfig } from '../../../util/validate-config';
 
@@ -33,7 +33,7 @@ describe('watch', () => {
   });
 
 
-  var config: BuildConfig;
+  var config: Config;
 
   beforeEach(() => {
     config = mockConfig();

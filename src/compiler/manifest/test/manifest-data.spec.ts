@@ -376,7 +376,7 @@ describe('manifest-data serialize/parse', () => {
   });
 
   it('excludeFromCollection false if tag is in bundles', () => {
-    const config: BuildConfig = {
+    const config: Config = {
       bundles: [
         { components: ['cmp-a', 'cmp-b'] }
       ]
@@ -389,7 +389,7 @@ describe('manifest-data serialize/parse', () => {
   });
 
   it('excludeFromCollection true if tag not in bundles', () => {
-    const config: BuildConfig = {
+    const config: Config = {
       bundles: [
         { components: ['cmp-a', 'cmp-b'] }
       ]
@@ -402,7 +402,7 @@ describe('manifest-data serialize/parse', () => {
   });
 
   it('excludeFromCollection defaults true', () => {
-    const config: BuildConfig = {};
+    const config: Config = {};
     const cmpData: ComponentData = {};
     const r = excludeFromCollection(config, cmpData);
     expect(r).toBe(true);
@@ -424,7 +424,7 @@ describe('manifest-data serialize/parse', () => {
   var b: ModuleFile;
   var moduleFile: ModuleFile;
   var manifestDir = '/User/me/myapp/dist/collection/';
-  var config: BuildConfig = {
+  var config: Config = {
     sys: mockStencilSystem()
   };
 

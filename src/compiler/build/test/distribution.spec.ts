@@ -80,7 +80,7 @@ describe('distribution', () => {
       expect(diagnostics[0].messageText).toMatch(/"dist\/"/);
     });
 
-    var config: BuildConfig;
+    var config: Config;
     var diagnostics: Diagnostic[];
     var packageJsonData: any;
 

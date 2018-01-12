@@ -252,7 +252,7 @@ describe('copy tasks', () => {
   });
 
 
-  var config: BuildConfig;
+  var config: Config;
   var sys = mockStencilSystem();
 
   beforeEach(() => {

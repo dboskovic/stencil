@@ -1,4 +1,4 @@
-import { BuildConfig } from '../interfaces';
+import { Config } from '../interfaces';
 import { mockFs, mockLogger, mockStencilSystem } from '../../testing/mocks';
 import { setProcessEnvironment, validateBuildConfig } from '../validate-config';
 import * as path from 'path';
@@ -463,7 +463,7 @@ describe('validation', () => {
 
 
   var sys = mockStencilSystem();
-  var config: BuildConfig;
+  var config: Config;
   var logger = mockLogger();
 
   beforeEach(() => {

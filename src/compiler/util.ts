@@ -3,7 +3,7 @@ import { Config, CompilerCtx, Diagnostic, StencilSystem } from '../util/interfac
 import { BuildEvents } from './events';
 
 
-export function getCompilerContext(sys: StencilSystem, compilerCtx: CompilerCtx = {}) {
+export function getCompilerCtx(sys: StencilSystem, compilerCtx: CompilerCtx = {}) {
   // reusable data between builds
   compilerCtx.fs = compilerCtx.fs || sys.createFileSystem();
   compilerCtx.events = compilerCtx.events || new BuildEvents();
