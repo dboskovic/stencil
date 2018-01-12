@@ -23,6 +23,12 @@ export function validateBuildConfig(config: Config, setEnvVariables?: boolean) {
     throw new Error('config.sys required');
   }
 
+  if (typeof config.logLevel === 'string') {
+    config.logger.level = config.logLevel;
+  } else if (typeof config.logger.level === 'string') {
+    config.logLevel = config.logger.level;
+  }
+
   validateNamespace(config);
 
   const path = config.sys.path;

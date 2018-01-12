@@ -1,10 +1,16 @@
-import { build } from './build';
+import { build } from '../build/build';
 import { BuildResults, Config, CompilerCtx, WatcherResults } from '../../util/interfaces';
+import { validateBuildConfig } from '../../util/validate-config';
 
 
-export function watchBuild(config: Config, ctx: CompilerCtx, watcher: WatcherResults): Promise<BuildResults> {
+export function rebuild(config: Config, ctx: CompilerCtx, watcher: WatcherResults): Promise<BuildResults> {
+
   // print out a pretty message about the changed files
   printWatcherMessage(config, watcher);
+
+  if (watcher.configUpdated) {
+    configFileReload(config);
+  }
 
   // kick off the rebuild
   return build(config, ctx, watcher);
@@ -50,7 +56,7 @@ function printWatcherMessage(config: Config, watcherResults: WatcherResults) {
 }
 
 
-export function watchConfigFileReload(config: Config) {
+export function configFileReload(config: Config) {
   config.logger.debug(`reload config file: ${config.configPath}`);
 
   try {
@@ -59,7 +65,6 @@ export function watchConfigFileReload(config: Config) {
     // just update the existing config in place
     // not everything should be overwritten or merged
     // pick and choose what's ok to update
-    config._isValidated = false;
     config.buildDir = updatedConfig.buildDir;
     config.distDir = updatedConfig.distDir;
     config.bundles = updatedConfig.bundles;
@@ -83,6 +88,9 @@ export function watchConfigFileReload(config: Config) {
     config.publicPath = updatedConfig.publicPath;
     config.srcDir = updatedConfig.srcDir;
     config.watchIgnoredRegex = updatedConfig.watchIgnoredRegex;
+
+    config._isValidated = false;
+    validateBuildConfig(config);
 
   } catch (e) {
     config.logger.error(e);

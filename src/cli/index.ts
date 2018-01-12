@@ -1,4 +1,4 @@
-import { BuildResults, Config, Logger, StencilSystem } from '../util/interfaces';
+import { Config, Logger, StencilSystem } from '../util/interfaces';
 import { getConfigFilePath, hasError, overrideConfigFromArgv, parseArgv } from './cli-utils';
 import { help } from './task-help';
 import { initApp } from './task-init';

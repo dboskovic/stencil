@@ -2,7 +2,7 @@ import { CompilerEventName, BuildResults } from '../util/interfaces';
 
 
 export class BuildEvents {
-  private events: { [eventName: string]: Function[] } = {};
+  private evCallbacks: { [eventName: string]: Function[] } = {};
 
 
   subscribe(eventName: 'fileUpdate', cb: (path: string) => void): Function;
@@ -12,38 +12,39 @@ export class BuildEvents {
   subscribe(eventName: 'dirDelete', cb: (path: string) => void): Function;
   subscribe(eventName: 'build', cb: (buildResults: BuildResults) => void): Function;
   subscribe(eventName: 'rebuild', cb: (buildResults: BuildResults) => void): Function;
-  subscribe(eventName: string, cb: Function): Function {
-    eventName = getEventName(eventName);
+  subscribe(eventName: CompilerEventName, cb: Function): Function {
+    const evName = getEventName(eventName);
 
-    if (!this.events[eventName]) {
-      this.events[eventName] = [];
+    if (!this.evCallbacks[evName]) {
+      this.evCallbacks[evName] = [];
     }
 
-    this.events[eventName].push(cb);
+    this.evCallbacks[evName].push(cb);
 
     return () => {
-      this.unsubscribe(eventName, cb);
+      this.unsubscribe(evName, cb);
     };
   }
 
 
   unsubscribe(eventName: string, cb: Function) {
-    eventName = getEventName(eventName);
+    const evName = getEventName(eventName);
 
-    if (this.events[eventName]) {
-      const index = this.events[eventName].indexOf(cb);
+    if (this.evCallbacks[evName]) {
+      const index = this.evCallbacks[evName].indexOf(cb);
       if (index > -1) {
-        this.events[eventName].splice(index, 1);
+        this.evCallbacks[evName].splice(index, 1);
       }
     }
   }
 
 
   emit(eventName: CompilerEventName, ...args: any[]) {
-    const eventCallbacks = this.events[getEventName(eventName)];
+    const evName = getEventName(eventName);
+    const evCallbacks = this.evCallbacks[evName];
 
-    if (eventCallbacks) {
-      eventCallbacks.forEach(cb => {
+    if (evCallbacks) {
+      evCallbacks.forEach(cb => {
         try {
           cb.apply(this, args);
         } catch (e) {

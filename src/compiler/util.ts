@@ -17,7 +17,7 @@ export function getCompilerCtx(sys: StencilSystem, compilerCtx: CompilerCtx = {}
   compilerCtx.moduleBundleLegacyOutputs = compilerCtx.moduleBundleLegacyOutputs || {};
 
   if (typeof compilerCtx.activeBuildId !== 'number') {
-    compilerCtx.activeBuildId = 0;
+    compilerCtx.activeBuildId = -1;
   }
 
   compilerCtx.lastBuildHadError = false;

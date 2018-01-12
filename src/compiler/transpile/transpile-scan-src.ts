@@ -4,6 +4,7 @@ import { transpileModules } from '../transpile/transpile';
 
 
 export async function transpileScanSrc(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
+  console.log('is rebuild transpileScanSrc', buildCtx.isRebuild)
   if (canSkipTranspile(buildCtx)) {
     // this is a rebuild, but turns out the files causing to
     // do not require us to run the transpiling again
@@ -11,7 +12,6 @@ export async function transpileScanSrc(config: Config, compilerCtx: CompilerCtx,
   }
 
   const timeSpan = config.logger.createTimeSpan(`compile started`);
-  config.logger.debug(`compileSrcDir: ${config.srcDir}`);
 
   // keep a collection of ts files that are new or updated
   const changedTsFilePaths: string[] = [];
@@ -78,14 +78,14 @@ function scanDir(config: Config, fs: InMemoryFileSystem, changedTsFilePaths: str
 
 function canSkipTranspile(buildCtx: BuildCtx) {
   if (!buildCtx.watcher) {
-    // not a rebuild from a watch, so let's transpile
+    // not a rebuild from a watch, so we cannot skip transpile
     return false;
   }
 
   if (buildCtx.watcher.dirsAdded.length > 0 || buildCtx.watcher.dirsDeleted.length > 0) {
     // if a directory was added or deleted
-    // then we must do a transpile rebuild
-    return true;
+    // then we cannot skip transpile
+    return false;
   }
 
   const isTsFileInChangedFiles = buildCtx.watcher.filesChanged.some(filePath => {

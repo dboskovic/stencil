@@ -1,4 +1,4 @@
-import { Config, CompilerCtx, BuildResults, Diagnostic, InMemoryFileSystem } from '../util/interfaces';
+import { BuildResults, Config, CompilerCtx, CompilerEventName, Diagnostic, InMemoryFileSystem } from '../util/interfaces';
 import { build } from './build/build';
 import { docs } from './docs/docs';
 import { getCompilerCtx, catchError } from './util';
@@ -30,9 +30,9 @@ export class Compiler {
 
   once(eventName: 'build'): Promise<BuildResults>;
   once(eventName: 'rebuild'): Promise<BuildResults>;
-  once(eventName: any) {
+  once(eventName: CompilerEventName) {
     return new Promise<any>(resolve => {
-      const off = this.ctx.events.subscribe(eventName, (...args: any[]) => {
+      const off = this.ctx.events.subscribe(eventName as any, (...args: any[]) => {
         off();
         resolve.apply(this, args);
       });
@@ -43,13 +43,12 @@ export class Compiler {
     this.ctx.events.unsubscribe(eventName, cb);
   }
 
-  trigger(eventName: 'fileAdd', path: string): void;
-  trigger(eventName: 'fileChange', path: string): void;
+  trigger(eventName: 'fileUpdate', path: string): void;
   trigger(eventName: 'fileAdd', path: string): void;
   trigger(eventName: 'fileDelete', path: string): void;
   trigger(eventName: 'dirAdd', path: string): void;
   trigger(eventName: 'dirDelete', path: string): void;
-  trigger(eventName: any, ...args: any[]) {
+  trigger(eventName: CompilerEventName, ...args: any[]) {
     args.unshift(eventName);
     this.ctx.events.emit.apply(this.ctx.events, args);
   }

@@ -10,7 +10,7 @@ import { generateBundles } from '../bundle/generate-bundles';
 import { generateIndexHtml } from '../html/generate-index-html';
 import { generateReadmes } from '../docs/generate-readmes';
 import { initIndexHtml } from '../html/init-index-html';
-import { initWatch } from './watch-init';
+import { initWatcher } from '../watcher/watcher-init';
 import { prerenderApp } from '../prerender/prerender-app';
 import { transpileScanSrc } from '../transpile/transpile-scan-src';
 
@@ -87,7 +87,7 @@ export async function build(config: Config, compilerCtx?: CompilerCtx, watcher?:
     if (shouldAbort(compilerCtx, buildCtx)) return finishBuild(config, compilerCtx, buildCtx);
 
     // setup watcher if need be
-    initWatch(config, compilerCtx, buildCtx);
+    initWatcher(config, compilerCtx, buildCtx);
 
   } catch (e) {
     // ¯\_(ツ)_/¯
@@ -179,7 +179,7 @@ function generateBuildResults(config: Config, buildCtx: BuildCtx) {
   };
 
   // only bother adding the stats when in debug more (for testing mainly)
-  if (config.logger.level === 'debug') {
+  if (config.logLevel === 'debug') {
     buildResults.stats = {
       isRebuild: buildCtx.isRebuild,
       filesWritten: buildCtx.filesWritten,

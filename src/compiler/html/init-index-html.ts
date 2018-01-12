@@ -11,7 +11,7 @@ export function initIndexHtml(config: Config, compilerCtx: CompilerCtx, buildCtx
 
   if (buildCtx.isRebuild) {
     // don't bother doing this again on rebuilds
-    return false;
+    return true;
   }
 
   // check if there's even a src index.html file

@@ -1,10 +1,10 @@
 import { Config, CompilerCtx, WatcherResults, BuildCtx } from '../../util/interfaces';
-import { copyTasks, isCopyTaskFile } from './copy-tasks';
+import { copyTasks, isCopyTaskFile } from '../build/copy-tasks';
 import { isWebDevFile, normalizePath } from '../util';
-import { watchBuild, watchConfigFileReload } from './watch-build';
+import { rebuild, configFileReload } from './rebuild';
 
 
-export function initWatch(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
+export function initWatcher(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
   // only create the watcher if this is a watch build
   // and this is the first build
   if (buildCtx.isRebuild || !config.watch) return;
@@ -45,15 +45,16 @@ function addWatcherListeners(config: Config, compilerCtx: CompilerCtx, buildCtx:
   compilerCtx.events.subscribe('fileUpdate', (path) => {
     path = normalizePath(path);
 
-    config.logger.debug(`watcher, fileChange: ${path}, ${Date.now()}`);
+    config.logger.debug(`watcher, fileUpdate: ${path}, ${Date.now()}`);
 
     compilerCtx.fs.clearFileCache(path);
 
     if (path === config.configPath) {
       // the actual stencil config file changed
       // this is a big deal, so do a full rebuild
-      watchConfigFileReload(config);
+      configFileReload(config);
       watcher.configUpdated = true;
+      watcher.filesUpdated.push(path);
       queue();
 
     } else if (isCopyTaskFile(config, path)) {
@@ -148,21 +149,20 @@ function addWatcherListeners(config: Config, compilerCtx: CompilerCtx, buildCtx:
         // to create one array of all the files that changed
         watcher.filesChanged = watcher.filesAdded.concat(watcher.filesDeleted, watcher.filesUpdated).sort();
 
-        // create a copy of the results that we can pass around
-        const watcherResults = Object.assign({}, watcher);
-
-        // reset the watch build object
-        watcher.dirsAdded.length = 0;
-        watcher.dirsDeleted.length = 0;
-        watcher.filesAdded.length = 0;
-        watcher.filesDeleted.length = 0;
-        watcher.filesUpdated.length = 0;
-        watcher.filesChanged.length = 0;
-        watcher.configUpdated = false;
-
         // kick off the watch build process to see
         // what stuff needs to actually rebuild
-        watchBuild(config, compilerCtx, watcherResults);
+        rebuild(config, compilerCtx, watcher);
+
+        // reset
+        watcher = {
+          dirsAdded: [],
+          dirsDeleted: [],
+          filesAdded: [],
+          filesDeleted: [],
+          filesUpdated: [],
+          filesChanged: [],
+          configUpdated: false
+        };
 
       } catch (e) {
         config.logger.error(e.toString());
