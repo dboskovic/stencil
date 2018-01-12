@@ -1,6 +1,6 @@
 import { BuildConfig } from '../../util/interfaces';
 import { normalizeHydrateOptions } from '../hydrate-utils';
-import { mockBuildConfig } from '../../testing/mocks';
+import { mockConfig } from '../../testing/mocks';
 
 
 describe('normalizeHydrateOptions', () => {
@@ -42,7 +42,7 @@ describe('normalizeHydrateOptions', () => {
   var config: BuildConfig;
 
   beforeEach(() => {
-    config = mockBuildConfig();
+    config = mockConfig();
   });
 
 });

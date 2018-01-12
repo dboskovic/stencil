@@ -2,13 +2,13 @@ import * as path from 'path';
 import * as ts from 'typescript';
 import { DEFAULT_COMPILER_OPTIONS } from '../compiler-options';
 import { transpileModule } from '../transpile';
-import { mockBuildConfig } from '../../../testing/mocks';
+import { mockConfig } from '../../../testing/mocks';
 
 
 describe('component decorator', () => {
 
   let response;
-  var config = mockBuildConfig();
+  var config = mockConfig();
 
   it('simple test', () => {
     const filePath = path.join(__dirname, 'component.tsx');

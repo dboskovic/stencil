@@ -1,4 +1,4 @@
-import { BuildConfig, CopyTask } from '../../../util/interfaces';
+import { Config, CopyTask } from '../../../util/interfaces';
 import { getSrcAbsPath, getDestAbsPath, getGlobCopyTask, isCopyTaskFile, processCopyTask, processCopyTasks } from '../copy-tasks';
 import { mockStencilSystem } from '../../../testing/mocks';
 

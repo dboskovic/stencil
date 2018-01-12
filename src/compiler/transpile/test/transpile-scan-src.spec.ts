@@ -1,6 +1,6 @@
 import { BuildConfig } from '../../../util/interfaces';
 import { isFileIncludePath } from '../transpile-scan-src';
-import { mockBuildConfig } from '../../../testing/mocks';
+import { mockConfig } from '../../../testing/mocks';
 
 
 describe('compile', () => {
@@ -47,7 +47,7 @@ describe('compile', () => {
   var config: BuildConfig;
 
   beforeEach(() => {
-    config = mockBuildConfig();
+    config = mockConfig();
   });
 
 });

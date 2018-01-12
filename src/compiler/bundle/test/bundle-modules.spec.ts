@@ -1,4 +1,4 @@
-import { BuildConfig, BuildContext, Bundle, Diagnostic, ModuleFile } from '../../../util/interfaces';
+import { Config, CompilerCtx, Bundle, Diagnostic, ModuleFile } from '../../../util/interfaces';
 import {
   bundledComponentContainsChangedFile,
   canSkipBuild

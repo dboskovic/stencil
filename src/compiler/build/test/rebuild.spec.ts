@@ -1,6 +1,6 @@
 import { build } from '../build';
-import { BuildConfig, BuildContext, BuildResults } from '../../../util/interfaces';
-import { mockBuildConfig, mockFs } from '../../../testing/mocks';
+import { Config, CompilerCtx, BuildResults } from '../../../util/interfaces';
+import { mockConfig, mockFs } from '../../../testing/mocks';
 import { validateBuildConfig } from '../../../util/validate-config';
 import * as path from 'path';
 import { Compiler } from '../../compiler';
@@ -174,7 +174,7 @@ describe('rebuild', () => {
   //     expect(r.diagnostics.length).toBe(0);
   //     expect(ctx.transpileBuildCount).toBe(3);
   //     expect(ctx.bundleBuildCount).toBe(2);
-  //     expect(ctx.sassBuildCount).toBe(2);
+  //     expect(ctx.styleBuildCount).toBe(2);
 
   //     expect(wroteFile(r, 'cmp-a.js')).toBe(true);
   //     expect(wroteFile(r, 'cmp-b.js')).toBe(true);
@@ -188,7 +188,7 @@ describe('rebuild', () => {
   //       expect(ctx.isChangeBuild).toBe(true);
   //       expect(ctx.transpileBuildCount).toBe(1);
   //       expect(ctx.bundleBuildCount).toBe(2);
-  //       expect(ctx.sassBuildCount).toBe(0);
+  //       expect(ctx.styleBuildCount).toBe(0);
 
   //       expect(wroteFile(r, 'cmp-a.js')).toBe(true);
   //       expect(wroteFile(r, 'cmp-b.js')).toBe(true);
@@ -297,7 +297,7 @@ describe('rebuild', () => {
   //       expect(r.diagnostics.length).toBe(0);
   //       expect(ctx.transpileBuildCount).toBe(0);
   //       expect(ctx.bundleBuildCount).toBe(0);
-  //       expect(ctx.sassBuildCount).toBe(2);
+  //       expect(ctx.styleBuildCount).toBe(2);
   //     });
   //   });
   // });
@@ -317,7 +317,7 @@ describe('rebuild', () => {
   //     expect(r.diagnostics.length).toBe(0);
   //     expect(ctx.transpileBuildCount).toBe(2);
   //     expect(ctx.bundleBuildCount).toBe(2);
-  //     expect(ctx.sassBuildCount).toBe(2);
+  //     expect(ctx.styleBuildCount).toBe(2);
 
   //     expect(wroteFile(r, 'cmp-a.js')).toBe(true);
   //     expect(wroteFile(r, 'cmp-b.js')).toBe(true);
@@ -331,7 +331,7 @@ describe('rebuild', () => {
   //       expect(r.diagnostics.length).toBe(0);
   //       expect(ctx.transpileBuildCount).toBe(1);
   //       expect(ctx.bundleBuildCount).toBe(1);
-  //       expect(ctx.sassBuildCount).toBe(1);
+  //       expect(ctx.styleBuildCount).toBe(1);
 
   //       expect(wroteFile(r, 'cmp-a.js')).toBe(true);
   //       expect(wroteFile(r, 'cmp-b.js')).toBe(false);
@@ -385,7 +385,7 @@ describe('rebuild', () => {
   //     }).then((r: BuildResults) => {
   //       expect(ctx.transpileBuildCount).toBe(0);
   //       expect(ctx.bundleBuildCount).toBe(0);
-  //       expect(ctx.sassBuildCount).toBe(1);
+  //       expect(ctx.styleBuildCount).toBe(1);
 
   //       expect(r.files.length).toBe(1);
   //       expect(wroteFile(r, 'cmp-a.js')).toBe(true);
@@ -403,8 +403,8 @@ describe('rebuild', () => {
     const initialBuildResults = await c.build();
 
     // initial build finished
-    expect(initialBuildResults.stats.isRebuid).toBe(false);
-    expect(initialBuildResults.stats.buildCount).toBe(1);
+    expect(initialBuildResults.buildId).toBe(1);
+    expect(initialBuildResults.stats.isRebuild).toBe(false);
 
     // create a rebuild listener
     const rebuildListener = c.once('rebuild');
@@ -416,19 +416,19 @@ describe('rebuild', () => {
     // get the rebuild results
     const rebuildResults = await rebuildListener;
 
-    expect(rebuildResults.stats.isRebuid).toBe(true);
-    expect(rebuildResults.stats.buildCount).toBe(2);
+    expect(rebuildResults.buildId).toBe(2);
+    expect(rebuildResults.stats.isRebuild).toBe(true);
     expect(rebuildResults.stats.transpileBuildCount).toBe(1);
     expect(rebuildResults.stats.bundleBuildCount).toBe(1);
-    expect(rebuildResults.stats.sassBuildCount).toBe(1);
-    expect(rebuildResults.stats.files.length).toBe(0);
+    expect(rebuildResults.stats.styleBuildCount).toBe(1);
+    expect(rebuildResults.stats.filesWritten.length).toBe(0);
   });
 
 
   var c: Compiler;
 
   beforeEach(() => {
-    c = new Compiler(mockBuildConfig());
+    c = new Compiler(mockConfig());
     c.fs.ensureDirSync('/src');
     c.fs.writeFileSync('/src/index.html', `<cmp-a></cmp-a>`);
   });
@@ -436,7 +436,7 @@ describe('rebuild', () => {
 
   function wroteFile(r: BuildResults, p: string) {
     const filename = path.basename(p);
-    return r.stats.files.some(f => {
+    return r.stats.filesWritten.some(f => {
       return path.basename(f) === filename;
     });
   }

@@ -1,7 +1,7 @@
-import { BuildConfig, BuildContext, ComponentRegistry, HydrateOptions, HydrateResults } from '../../util/interfaces';
+import { Config, CompilerCtx, ComponentRegistry, HydrateOptions, HydrateResults } from '../../util/interfaces';
 import { hydrateHtml } from '../hydrate-html';
 import { h } from '../../core/renderer/h';
-import { mockBuildConfig, compareHtml } from '../../testing/mocks';
+import { mockConfig, compareHtml } from '../../testing/mocks';
 
 
 describe('hydrate', () => {
@@ -143,7 +143,7 @@ describe('hydrate', () => {
   var config: BuildConfig;
 
   beforeEach(() => {
-    config = mockBuildConfig();
+    config = mockConfig();
   });
 
 });

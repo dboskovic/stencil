@@ -1,4 +1,4 @@
-import { AppRegistry, BuildConfig, BuildContext, ComponentRegistry, LoadComponentRegistry } from '../../../util/interfaces';
+import { AppRegistry, Config, CompilerCtx, ComponentRegistry, LoadComponentRegistry } from '../../../util/interfaces';
 import { generateLoader, injectAppIntoLoader } from '../app-loader';
 import { generatePreamble } from '../../util';
 import { mockLogger, mockStencilSystem } from '../../../testing/mocks';

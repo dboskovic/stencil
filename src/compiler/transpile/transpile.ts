@@ -161,7 +161,7 @@ function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: 
 }
 
 
-// function processIncludedStyles(config: BuildConfig, ctx: BuildContext, moduleFile: ModuleFile) {
+// function processIncludedStyles(config: Config, ctx: CompilerCtx, moduleFile: ModuleFile) {
 //   if (ctx.isChangeBuild && !ctx.changeHasSass && !ctx.changeHasCss) {
 //     // this is a change, but it's not for any styles so don't bother
 //     return Promise.resolve([]);
@@ -198,7 +198,7 @@ function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: 
 // }
 
 
-// function getIncludedSassFiles(config: BuildConfig, diagnostics: Diagnostic[], moduleFile: ModuleFile, scssFilePath: string) {
+// function getIncludedSassFiles(config: Config, diagnostics: Diagnostic[], moduleFile: ModuleFile, scssFilePath: string) {
 //   return new Promise(resolve => {
 //     scssFilePath = normalizePath(scssFilePath);
 
@@ -235,7 +235,7 @@ function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: 
 //   });
 // }
 
-// async function copySourceSassFilesToDest(config: BuildConfig, ctx: BuildContext, compileResults: CompileResults): Promise<any> {
+// async function copySourceSassFilesToDest(config: Config, ctx: CompilerCtx, compileResults: CompileResults): Promise<any> {
 //   if (!config.generateDistribution) {
 //     return;
 //   }

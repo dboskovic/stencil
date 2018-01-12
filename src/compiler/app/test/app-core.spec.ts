@@ -1,4 +1,4 @@
-import { BuildConfig, BuildContext } from '../../../util/interfaces';
+import { Config, BuildContext } from '../../../util/interfaces';
 import { CORE_NAME } from '../../../util/constants';
 import { generatePreamble } from '../../util';
 import { mockLogger, mockStencilSystem } from '../../../testing/mocks';

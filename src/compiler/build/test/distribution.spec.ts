@@ -1,6 +1,6 @@
 import { validatePackageJson, validatePackageFiles } from '../distribution';
-import { BuildConfig, BuildContext, BuildResults, ComponentRegistry, Diagnostic } from '../../../util/interfaces';
-import { mockBuildConfig } from '../../../testing/mocks';
+import { Config, CompilerCtx, BuildResults, ComponentRegistry, Diagnostic } from '../../../util/interfaces';
+import { mockConfig } from '../../../testing/mocks';
 import * as path from 'path';
 
 
@@ -85,7 +85,7 @@ describe('distribution', () => {
     var packageJsonData: any;
 
     beforeEach(() => {
-      config = mockBuildConfig();
+      config = mockConfig();
       config.namespace = 'SomeNamespace';
       config.fsNamespace = config.namespace.toLowerCase();
       diagnostics = [];
