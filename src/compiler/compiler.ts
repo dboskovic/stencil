@@ -1,14 +1,21 @@
-import { Config, CompilerCtx, BuildResults, InMemoryFileSystem } from '../util/interfaces';
+import { Config, CompilerCtx, BuildResults, Diagnostic, InMemoryFileSystem } from '../util/interfaces';
 import { build } from './build/build';
 import { docs } from './docs/docs';
-import { getCompilerCtx } from './util';
+import { getCompilerCtx, catchError } from './util';
+import { validateBuildConfig } from '../util/validate-config';
+import { validatePrerenderConfig } from './prerender/validate-prerender-config';
+import { validateServiceWorkerConfig } from './service-worker/validate-sw-config';
 
 
 export class Compiler {
   private ctx: CompilerCtx;
+  isValid: boolean;
 
   constructor(public config: Config) {
-    this.ctx = getCompilerCtx(config.sys);
+    this.isValid = isValid(config);
+    if (this.isValid) {
+      this.ctx = getCompilerCtx(config.sys);
+    }
   }
 
   build() {
@@ -63,4 +70,26 @@ export class Compiler {
     return this.config.sys.compiler.version;
   }
 
+}
+
+
+function isValid(config: Config) {
+  try {
+    // validate the build config
+    validateBuildConfig(config, true);
+    validatePrerenderConfig(config);
+    validateServiceWorkerConfig(config);
+    return true;
+
+  } catch (e) {
+    if (config.logger) {
+      const diagnostics: Diagnostic[] = [];
+      catchError(diagnostics, e);
+      config.logger.printDiagnostics(diagnostics);
+
+    } else {
+      console.error(e);
+    }
+    return false;
+  }
 }

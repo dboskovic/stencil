@@ -2,7 +2,7 @@ import { Config, CompilerCtx } from '../../util/interfaces';
 import { catchError, getCompilerCtx, hasError } from '../util';
 import { cleanDiagnostics } from '../../util/logger/logger-util';
 import { generateReadmes } from './generate-readmes';
-import { isConfigValid, getBuildContext } from '../build/build';
+import { getBuildContext } from '../build/build';
 import { transpileScanSrc } from '../transpile/transpile-scan-src';
 
 
@@ -11,13 +11,6 @@ export async function docs(config: Config, compilerCtx: CompilerCtx) {
   const buildCtx = getBuildContext(config, compilerCtx, null);
 
   config.logger.info(config.logger.cyan(`${config.sys.compiler.name} v${config.sys.compiler.version}`));
-
-  // validate the build config
-  if (!isConfigValid(config, buildCtx)) {
-    // invalid build config, let's not continue
-    config.logger.printDiagnostics(buildCtx.diagnostics);
-    return;
-  }
 
   // keep track of how long the entire build process takes
   const timeSpan = config.logger.createTimeSpan(`generate docs, ${config.fsNamespace}, started`);

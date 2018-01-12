@@ -171,7 +171,7 @@ describe('rebuild', () => {
   //   ctx.fs.writeFileSync('/src/service.tsx', `export class MyService {}`);
 
   //   return build(config, ctx).then(r => {
-  //     expect(r.diagnostics.length).toBe(0);
+  //     expect(r.diagnostics).toEqual([]);
   //     expect(ctx.transpileBuildCount).toBe(3);
   //     expect(ctx.bundleBuildCount).toBe(2);
   //     expect(ctx.styleBuildCount).toBe(2);
@@ -207,7 +207,7 @@ describe('rebuild', () => {
   //   ctx.fs.writeFileSync('/src/service.tsx', `export class MyService {}`);
 
   //   return build(config, ctx).then(r => {
-  //     expect(r.diagnostics.length).toBe(0);
+  //     expect(r.diagnostics).toEqual([]);
   //     expect(ctx.transpileBuildCount).toBe(3);
   //     expect(ctx.bundleBuildCount).toBe(2);
 
@@ -242,7 +242,7 @@ describe('rebuild', () => {
   //   ctx.fs.writeFileSync('/src/service.tsx', `export class MyService { test() { 'test'; } }`);
 
   //   return build(config, ctx).then(r => {
-  //     expect(r.diagnostics.length).toBe(0);
+  //     expect(r.diagnostics).toEqual([]);
   //     expect(ctx.transpileBuildCount).toBe(3);
   //     expect(ctx.bundleBuildCount).toBe(2);
 
@@ -294,7 +294,7 @@ describe('rebuild', () => {
   //       ctx.watcher.trigger('change', '/src/variables.scss');
 
   //     }).then((r: BuildResults) => {
-  //       expect(r.diagnostics.length).toBe(0);
+  //       expect(r.diagnostics).toEqual([]);
   //       expect(ctx.transpileBuildCount).toBe(0);
   //       expect(ctx.bundleBuildCount).toBe(0);
   //       expect(ctx.styleBuildCount).toBe(2);
@@ -314,7 +314,7 @@ describe('rebuild', () => {
   //   ctx.fs.writeFileSync('/src/cmp-b.scss', `body { color: blue; }`);
 
   //   return build(config, ctx).then(r => {
-  //     expect(r.diagnostics.length).toBe(0);
+  //     expect(r.diagnostics).toEqual([]);
   //     expect(ctx.transpileBuildCount).toBe(2);
   //     expect(ctx.bundleBuildCount).toBe(2);
   //     expect(ctx.styleBuildCount).toBe(2);
@@ -328,7 +328,7 @@ describe('rebuild', () => {
   //       ctx.watcher.trigger('change', '/src/cmp-a.tsx');
 
   //     }).then((r: BuildResults) => {
-  //       expect(r.diagnostics.length).toBe(0);
+  //       expect(r.diagnostics).toEqual([]);
   //       expect(ctx.transpileBuildCount).toBe(1);
   //       expect(ctx.bundleBuildCount).toBe(1);
   //       expect(ctx.styleBuildCount).toBe(1);
@@ -346,7 +346,7 @@ describe('rebuild', () => {
   //   ctx.fs.writeFileSync('/src/sass-a.scss', `body { color: red; }`);
 
   //   return build(config, ctx).then(r => {
-  //     expect(r.diagnostics.length).toBe(0);
+  //     expect(r.diagnostics).toEqual([]);
   //     expect(ctx.transpileBuildCount).toBe(1);
   //     expect(ctx.bundleBuildCount).toBe(1);
 
@@ -358,7 +358,7 @@ describe('rebuild', () => {
   //       ctx.watcher.trigger('change', '/src/cmp-a.tsx');
 
   //     }).then((r: BuildResults) => {
-  //       expect(r.diagnostics.length).toBe(0);
+  //       expect(r.diagnostics).toEqual([]);
   //       expect(ctx.transpileBuildCount).toBe(1);
   //       expect(ctx.bundleBuildCount).toBe(1);
   //       expect(wroteFile(r, 'cmp-a.js')).toBe(true);

@@ -13,9 +13,6 @@ import { initIndexHtml } from '../html/init-index-html';
 import { initWatch } from './watch-init';
 import { prerenderApp } from '../prerender/prerender-app';
 import { transpileScanSrc } from '../transpile/transpile-scan-src';
-import { validateBuildConfig } from '../../util/validate-config';
-import { validatePrerenderConfig } from '../prerender/validate-prerender-config';
-import { validateServiceWorkerConfig } from '../service-worker/validate-sw-config';
 
 
 export async function build(config: Config, compilerCtx?: CompilerCtx, watcher?: WatcherResults) {
@@ -26,12 +23,6 @@ export async function build(config: Config, compilerCtx?: CompilerCtx, watcher?:
 
   // reset the build context, this is important for rebuilds
   const buildCtx = getBuildContext(config, compilerCtx, watcher);
-
-  // validate the build config
-  if (!isConfigValid(config, buildCtx)) {
-    // invalid build config, let's not continue
-    return finishBuild(config, compilerCtx, buildCtx);
-  }
 
   // create an initial index.html file if one doesn't already exist
   // this is synchronous on purpose
@@ -219,27 +210,4 @@ function shouldAbort(ctx: CompilerCtx, buildCtx: BuildCtx) {
   }
 
   return false;
-}
-
-
-export function isConfigValid(config: Config, buildCtx: BuildCtx) {
-  try {
-    // validate the build config
-    validateBuildConfig(config, true);
-
-    if (!buildCtx.isRebuild) {
-      validatePrerenderConfig(config);
-      validateServiceWorkerConfig(config);
-    }
-
-  } catch (e) {
-    if (config.logger) {
-      catchError(buildCtx.diagnostics, e);
-    } else {
-      console.error(e);
-    }
-    return false;
-  }
-
-  return true;
 }

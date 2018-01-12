@@ -36,56 +36,57 @@ export async function run(process: NodeJS.Process, sys: StencilSystem, logger: L
     return process.exit(1);
   }
 
-  // override the config values with any cli arguments
-  overrideConfigFromArgv(config, argv);
+  try {
+    // override the config values with any cli arguments
+    overrideConfigFromArgv(config, argv);
 
-  if (!config.logger) {
-    // if a logger was not provided then use the
-    // default stencil command line logger
-    config.logger = logger;
-  }
+    if (!config.logger) {
+      // if a logger was not provided then use the
+      // default stencil command line logger
+      config.logger = logger;
+    }
 
-  if (config.logLevel) {
-    config.logger.level = config.logLevel;
-  }
+    if (config.logLevel) {
+      config.logger.level = config.logLevel;
+    }
 
-  if (!config.sys) {
-    // if the config was not provided then use the default node sys
-    config.sys = sys;
-  }
+    if (!config.sys) {
+      // if the config was not provided then use the default node sys
+      config.sys = sys;
+    }
 
-  const { Compiler } = await import('../compiler/index.js');
+    const { Compiler } = await import('../compiler/index.js');
 
-  const compiler = new Compiler(config);
+    const compiler = new Compiler(config);
+    if (!compiler.isValid) {
+      return process.exit(1);
+    }
 
-  switch (task) {
-    case 'build':
-      compiler.build().then((results: BuildResults) => {
+    switch (task) {
+      case 'build':
+        const results = await compiler.build();
         if (!config.watch && hasError(results && results.diagnostics)) {
           process.exit(1);
         }
 
-      }).catch((err: any) => {
-        config.logger.error(err);
+        if (config.watch) {
+          process.once('SIGINT', () => {
+            return process.exit(0);
+          });
+        }
+        break;
+
+      case 'docs':
+        await compiler.docs();
+        break;
+
+      default:
+        config.logger.error(`Invalid stencil command, please see the options below:`);
+        help(process, logger);
         process.exit(1);
-      });
+    }
 
-      if (config.watch) {
-        process.once('SIGINT', () => {
-          return process.exit(0);
-        });
-      }
-      break;
-
-    case 'docs':
-      compiler.docs().catch((err: any) => {
-        config.logger.error(err);
-      });
-      break;
-
-    default:
-      config.logger.error(`Invalid stencil command, please see the options below:`);
-      help(process, logger);
-      process.exit(1);
+  } catch (e) {
+    config.logger.error(e);
   }
 }
