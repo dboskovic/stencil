@@ -1,7 +1,7 @@
-import { BuildConfig, ServiceWorkerConfig } from '../../util/interfaces';
+import { Config, ServiceWorkerConfig } from '../../util/interfaces';
 
 
-export function validateServiceWorkerConfig(config: BuildConfig) {
+export function validateServiceWorkerConfig(config: Config) {
   if (!config.serviceWorker) {
     config.serviceWorker = null;
     return;

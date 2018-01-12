@@ -1,48 +1,49 @@
-import { BuildConfig, BuildContext, InMemoryFileSystem, ModuleFiles } from '../../util/interfaces';
-import { catchError, hasError, pathJoin } from '../util';
+import { BuildCtx, CompilerCtx, Config, InMemoryFileSystem } from '../../util/interfaces';
+import { catchError, hasError, pathJoin, isTsFile } from '../util';
 import { transpileModules } from '../transpile/transpile';
 
 
-export async function transpileScanSrc(config: BuildConfig, ctx: BuildContext) {
-  if (hasError(ctx.diagnostics)) {
+export async function transpileScanSrc(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
+  if (hasError(buildCtx.diagnostics)) {
     // we've already got an error, let's not continue
+    return;
+  }
+
+  if (canSkipTranspile(buildCtx)) {
+    // this is a rebuild, but turns out the files causing to
+    // do not require us to run the transpiling again
     return;
   }
 
   const timeSpan = config.logger.createTimeSpan(`compile started`);
   config.logger.debug(`compileSrcDir: ${config.srcDir}`);
 
-  // keep a collection of all the ts files we found
-  const tsFilePaths: string[] = [];
+  // keep a collection of ts files that are new or updated
+  const changedTsFilePaths: string[] = [];
 
   try {
     // recursively scan all of the src directories
     // looking for typescript files to transpile
     // and read the files async and put into our
     // in-memory file system
-    await scanDir(config, ctx.fs, tsFilePaths, config.srcDir);
-
-    // clean up the module files we need to be worried about
-    // add ts files we just found on disk
-    // and removes existing module files we once had, but didn't find again
-    cleanModuleFiles(tsFilePaths, ctx.moduleFiles);
+    await scanDir(config, compilerCtx.fs, changedTsFilePaths, config.srcDir);
 
     // found all the files we need to transpile
     // and have all the files in-memory and ready to go
     // go ahead and kick off transpiling
     // process is NOT async
-    transpileModules(config, ctx);
+    transpileModules(config, compilerCtx, buildCtx, changedTsFilePaths);
 
   } catch (e) {
     // gah!!
-    catchError(ctx.diagnostics, e);
+    catchError(buildCtx.diagnostics, e);
   }
 
   timeSpan.finish(`compile finished`);
 }
 
 
-function scanDir(config: BuildConfig, fs: InMemoryFileSystem, tsFilePaths: string[], dir: string): Promise<any> {
+function scanDir(config: Config, fs: InMemoryFileSystem, changedTsFilePaths: string[], dir: string): Promise<any> {
   // loop through this directory and sub directories looking for
   // files that need to be transpiled
   return fs.readdir(dir).then(files => {
@@ -56,18 +57,20 @@ function scanDir(config: BuildConfig, fs: InMemoryFileSystem, tsFilePaths: strin
         if (s.isDirectory()) {
           // looks like it's yet another directory
           // let's keep drilling down
-          return scanDir(config, fs, tsFilePaths, itemPath);
+          return scanDir(config, fs, changedTsFilePaths, itemPath);
 
         } else if (s.isFile() && isFileIncludePath(config, itemPath)) {
           // woot! we found a typescript file that needs to be transpiled
 
-          // add it to our collection of ts file paths we found
-          tsFilePaths.push(itemPath);
-
-          // let's async read the source file so it get's loaded up
+          // let's async read and cache the source file so it get's loaded up
           // into our in-memory file system to be used later during
           // the actual transpile
-          return fs.readFileSync(itemPath);
+          const isCachedFile = fs.isCachedReadFile(itemPath);
+          if (!isCachedFile) {
+            // this file wasn't already in the cache so let's put
+            // it into our list of changed ts file paths
+            changedTsFilePaths.push(itemPath);
+          }
         }
 
         // not a directory and it's not a typescript file, so do nothing
@@ -78,33 +81,29 @@ function scanDir(config: BuildConfig, fs: InMemoryFileSystem, tsFilePaths: strin
 }
 
 
-function cleanModuleFiles(currentTsFilePaths: string[], moduleFiles: ModuleFiles) {
-  // clean up the ctx.moduleFiles of actual files we found
-  // add any we didn't know about and remove any we no longer have on disk
+function canSkipTranspile(buildCtx: BuildCtx) {
+  if (!buildCtx.watcher) {
+    // not a rebuild from a watch, so let's transpile
+    return false;
+  }
 
-  Object.keys(moduleFiles).forEach(existingTsFilePath => {
-    if (currentTsFilePaths.indexOf(existingTsFilePath) === -1) {
-      // so at one point we had this ts file in memory
-      // but from the most recent scan, it's no longer there
-      // let's remove this ts file from the moduleFiles
-      delete moduleFiles[existingTsFilePath];
-    }
+  if (buildCtx.watcher.dirsAdded.length > 0 || buildCtx.watcher.dirsDeleted.length > 0) {
+    // if a directory was added or deleted
+    // then we must do a transpile rebuild
+    return true;
+  }
+
+  const isTsFileInChangedFiles = buildCtx.watcher.filesChanged.some(filePath => {
+    // do a transpile rebuild if one of the changed files is a ts file
+    return isTsFile(filePath);
   });
 
-  currentTsFilePaths.forEach(currentTsFilePath => {
-    // loop through the current list of ts files we found on disk
-    // and add any we don't already have to our moduleFiles
-    if (!moduleFiles[currentTsFilePath]) {
-      // we don't have this module file yet, add it to the object
-      moduleFiles[currentTsFilePath] = {
-        tsFilePath: currentTsFilePath
-      };
-    }
-  });
+  // we can skip the transpile if there are no ts files that are changed
+  return !isTsFileInChangedFiles;
 }
 
 
-export function isFileIncludePath(config: BuildConfig, readPath: string) {
+export function isFileIncludePath(config: Config, readPath: string) {
   for (var i = 0; i < config.excludeSrc.length; i++) {
     if (config.sys.minimatch(readPath, config.excludeSrc[i])) {
       // this file is a file we want to exclude

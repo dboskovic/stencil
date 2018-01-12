@@ -1,6 +1,6 @@
 import { dashToPascalCase } from '../../../util/helpers';
 import { DEFAULT_COMPILER_OPTIONS } from '../compiler-options';
-import { StyleMeta, BuildConfig } from '../../../util/interfaces';
+import { StyleMeta, Config } from '../../../util/interfaces';
 import * as ts from 'typescript';
 
 
@@ -172,7 +172,7 @@ export function transformSourceFile(sourceText: string, transformers: ts.CustomT
   }).outputText;
 }
 
-export function createImportNameFromUrl(config: BuildConfig, importUrl: string) {
+export function createImportNameFromUrl(config: Config, importUrl: string) {
   const ext = config.sys.path.extname(importUrl);
   const baseName = config.sys.path.basename(importUrl, ext);
 
@@ -184,7 +184,7 @@ export interface StyleImport {
   absolutePath: string;
 }
 
-export function getImportNameMapFromStyleMeta(config: BuildConfig, styleMeta: StyleMeta): StyleImport[] {
+export function getImportNameMapFromStyleMeta(config: Config, styleMeta: StyleMeta): StyleImport[] {
   return styleMeta.absolutePaths.map((ocp) => {
     const importName = createImportNameFromUrl(config, ocp) + 'Css';
     return {

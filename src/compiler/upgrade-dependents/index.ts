@@ -1,4 +1,4 @@
-import { BuildConfig, BuildContext, Manifest, Bundle } from '../../util/interfaces';
+import { Config, CompilerCtx, Manifest, Bundle } from '../../util/interfaces';
 import { CompilerUpgrade, validateManifestCompatibility } from './manifest-compatibility';
 import { transformSourceString } from '../transpile/transformers/util';
 import upgradeFrom0_0_5 from '../transpile/transformers/JSX_Upgrade_From_0_0_5/upgrade-jsx-props';
@@ -6,7 +6,7 @@ import upgradeFromMetadata from '../transpile/transformers/Metadata_Upgrade_From
 import ts from 'typescript';
 
 
-export async function upgradeDependentComponents(config: BuildConfig, ctx: BuildContext, bundles: Bundle[]) {
+export async function upgradeDependentComponents(config: Config, ctx: CompilerCtx, bundles: Bundle[]) {
   const doUpgrade = createDoUpgrade(config, ctx, bundles);
 
   return Promise.all(Object.keys(ctx.dependentManifests).map(async collectionName => {
@@ -22,7 +22,7 @@ export async function upgradeDependentComponents(config: BuildConfig, ctx: Build
 }
 
 
-function createDoUpgrade(config: BuildConfig, ctx: BuildContext, bundles: Bundle[]) {
+function createDoUpgrade(config: Config, ctx: CompilerCtx, bundles: Bundle[]) {
 
   return async (manifest: Manifest, upgrades: CompilerUpgrade[]): Promise<void> => {
     const upgradeTransforms: ts.TransformerFactory<ts.SourceFile>[] = (upgrades.map((upgrade) => {

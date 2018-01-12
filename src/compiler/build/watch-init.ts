@@ -1,20 +1,20 @@
-import { BuildConfig, BuildContext } from '../../util/interfaces';
+import { Config, CompilerCtx, WatcherResults, BuildCtx } from '../../util/interfaces';
 import { copyTasks, isCopyTaskFile } from './copy-tasks';
 import { isWebDevFile, normalizePath } from '../util';
 import { watchBuild, watchConfigFileReload } from './watch-build';
 
 
-export function initWatch(config: BuildConfig, ctx: BuildContext) {
+export function initWatch(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
   // only create the watcher if this is a watch build
   // and this is the first build
-  if (!config.watch || ctx.isRebuild) return;
+  if (buildCtx.isRebuild || !config.watch) return;
 
   config.logger.debug(`initWatch: ${config.srcDir}`);
 
-  addWatcherListeners(config, ctx);
+  addWatcherListeners(config, compilerCtx, buildCtx);
 
   if (config.sys.createWatcher) {
-    const watcher = config.sys.createWatcher(ctx.events, config.srcDir, {
+    const watcher = config.sys.createWatcher(compilerCtx.events, config.srcDir, {
       ignored: config.watchIgnoredRegex,
       ignoreInitial: true
     });
@@ -28,139 +28,141 @@ export function initWatch(config: BuildConfig, ctx: BuildContext) {
 }
 
 
-function addWatcherListeners(config: BuildConfig, ctx: BuildContext) {
-  let queueChangeBuild = false;
-  let queueFullBuild = false;
+function addWatcherListeners(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
+  let watcher: WatcherResults = {
+    dirsAdded: [],
+    dirsDeleted: [],
+    filesAdded: [],
+    filesDeleted: [],
+    filesUpdated: [],
+    filesChanged: [],
+    configUpdated: false
+  };
   let watchTmr: NodeJS.Timer;
   let copyTaskTmr: NodeJS.Timer;
-  const changedFiles: string[] = [];
 
 
-  ctx.events.subscribe('fileChange', (path) => {
+  compilerCtx.events.subscribe('fileUpdate', (path) => {
     path = normalizePath(path);
 
     config.logger.debug(`watcher, fileChange: ${path}, ${Date.now()}`);
 
-    ctx.fs.clearFileCache(path);
+    compilerCtx.fs.clearFileCache(path);
 
     if (path === config.configPath) {
       // the actual stencil config file changed
       // this is a big deal, so do a full rebuild
       watchConfigFileReload(config);
-      queueFullBuild = true;
+      watcher.configUpdated = true;
       queue();
-      return;
-    }
 
-    if (isCopyTaskFile(config, path)) {
+    } else if (isCopyTaskFile(config, path)) {
       startCopyTasks();
 
     } else if (isWebDevFile(path)) {
       // web dev file was updaed
       // queue change build
-      queueChangeBuild = true;
-      queue(path);
+      watcher.filesUpdated.push(path);
+      queue();
     }
   });
 
 
-  ctx.events.subscribe('fileAdd', (path) => {
+  compilerCtx.events.subscribe('fileAdd', (path) => {
     path = normalizePath(path);
 
     config.logger.debug(`watcher, fileAdd: ${path}, ${Date.now()}`);
 
-    ctx.fs.clearFileCache(path);
+    compilerCtx.fs.clearFileCache(path);
 
     if (isCopyTaskFile(config, path)) {
       startCopyTasks();
 
     } else if (isWebDevFile(path)) {
       // new web dev file was added
-      // do a full rebuild
-      queueFullBuild = true;
+      watcher.filesAdded.push(path);
       queue();
     }
   });
 
 
-  ctx.events.subscribe('fileDelete', (path) => {
+  compilerCtx.events.subscribe('fileDelete', (path) => {
     path = normalizePath(path);
 
     config.logger.debug(`watcher, fileDelete: ${path}, ${Date.now()}`);
 
-    ctx.fs.clearFileCache(path);
+    compilerCtx.fs.clearFileCache(path);
 
     if (isCopyTaskFile(config, path)) {
       startCopyTasks();
 
     } else if (isWebDevFile(path)) {
       // web dev file was delete
-      // do a full rebuild
-      queueFullBuild = true;
+      watcher.filesDeleted.push(path);
       queue();
     }
   });
 
 
-  ctx.events.subscribe('dirAdd', (path) => {
+  compilerCtx.events.subscribe('dirAdd', (path) => {
     path = normalizePath(path);
 
     config.logger.debug(`watcher, dirAdd: ${path}, ${Date.now()}`);
 
-    ctx.fs.clearDirCache(path);
+    compilerCtx.fs.clearDirCache(path);
 
     if (isCopyTaskFile(config, path)) {
       startCopyTasks();
 
     } else {
-      // no clue what's up, do a full rebuild
-      queueFullBuild = true;
+      watcher.dirsAdded.push(path);
       queue();
     }
   });
 
 
-  ctx.events.subscribe('dirDelete', (path) => {
+  compilerCtx.events.subscribe('dirDelete', (path) => {
     path = normalizePath(path);
 
     config.logger.debug(`watcher, dirDelete: ${path}, ${Date.now()}`);
 
-    ctx.fs.clearDirCache(path);
+    compilerCtx.fs.clearDirCache(path);
 
     if (isCopyTaskFile(config, path)) {
       startCopyTasks();
 
     } else {
-      // no clue what's up, do a full rebuild
-      queueFullBuild = true;
+      watcher.dirsDeleted.push(path);
       queue();
     }
   });
 
 
-  function queue(path?: string) {
+  function queue() {
     // debounce builds
     clearTimeout(watchTmr);
 
-    if (path && changedFiles.indexOf(path) === -1) {
-      path = normalizePath(path);
-      changedFiles.push(path);
-    }
-
     watchTmr = setTimeout(() => {
       try {
-        const changedFileCopies = changedFiles.slice();
-        changedFiles.length = 0;
+        // concat the files added, deleted and updated
+        // to create one array of all the files that changed
+        watcher.filesChanged = watcher.filesAdded.concat(watcher.filesDeleted, watcher.filesUpdated).sort();
 
-        if (queueFullBuild) {
-          watchBuild(config, ctx, true, changedFileCopies);
+        // create a copy of the results that we can pass around
+        const watcherResults = Object.assign({}, watcher);
 
-        } else if (queueChangeBuild) {
-          watchBuild(config, ctx, false, changedFileCopies);
-        }
+        // reset the watch build object
+        watcher.dirsAdded.length = 0;
+        watcher.dirsDeleted.length = 0;
+        watcher.filesAdded.length = 0;
+        watcher.filesDeleted.length = 0;
+        watcher.filesUpdated.length = 0;
+        watcher.filesChanged.length = 0;
+        watcher.configUpdated = false;
 
-        // reset
-        queueFullBuild = queueChangeBuild = false;
+        // kick off the watch build process to see
+        // what stuff needs to actually rebuild
+        watchBuild(config, compilerCtx, watcherResults);
 
       } catch (e) {
         config.logger.error(e.toString());
@@ -173,7 +175,7 @@ function addWatcherListeners(config: BuildConfig, ctx: BuildContext) {
     clearTimeout(copyTaskTmr);
 
     copyTaskTmr = setTimeout(() => {
-      copyTasks(config, ctx);
+      copyTasks(config, compilerCtx, buildCtx);
     }, 80);
   }
 }

@@ -1,7 +1,7 @@
-import { BuildConfig, ServiceWorkerConfig } from '../../util/interfaces';
+import { Config, ServiceWorkerConfig } from '../../util/interfaces';
 
 
-export function injectRegisterServiceWorker(config: BuildConfig, swConfig: ServiceWorkerConfig, indexHtml: string) {
+export function injectRegisterServiceWorker(config: Config, swConfig: ServiceWorkerConfig, indexHtml: string) {
   const match = indexHtml.match(BODY_CLOSE_REG);
 
   let swUrl = config.sys.path.relative(config.wwwDir, swConfig.swDest);

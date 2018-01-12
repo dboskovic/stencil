@@ -5,7 +5,7 @@ export class BuildEvents {
   private events: { [eventName: string]: Function[] } = {};
 
 
-  subscribe(eventName: 'fileChange', cb: (path: string) => void): Function;
+  subscribe(eventName: 'fileUpdate', cb: (path: string) => void): Function;
   subscribe(eventName: 'fileAdd', cb: (path: string) => void): Function;
   subscribe(eventName: 'fileDelete', cb: (path: string) => void): Function;
   subscribe(eventName: 'dirAdd', cb: (path: string) => void): Function;

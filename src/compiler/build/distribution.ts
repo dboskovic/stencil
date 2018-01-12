@@ -1,4 +1,4 @@
-import { BuildConfig, BuildContext, Diagnostic } from '../../util/interfaces';
+import { BuildCtx, Config, CompilerCtx, Diagnostic } from '../../util/interfaces';
 import { buildError, buildWarn, normalizePath } from '../util';
 import { COLLECTION_DEPENDENCIES_DIR } from '../manifest/manifest-data';
 import { COLLECTION_MANIFEST_FILE_NAME } from '../../util/constants';
@@ -7,37 +7,37 @@ import { pathJoin } from '../util';
 
 
 
-export async function generateDistribution(config: BuildConfig, ctx: BuildContext): Promise<any> {
+export async function generateDistribution(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx): Promise<any> {
   if (!config.generateDistribution) {
     // don't bother
     return;
   }
 
   return Promise.all([
-    readPackageJson(config, ctx),
-    copySourceCollectionComponentsToDistribution(config, ctx),
-    generateTypes(config, ctx)
+    readPackageJson(config, compilerCtx, buildCtx),
+    copySourceCollectionComponentsToDistribution(config, buildCtx),
+    generateTypes(config, compilerCtx)
   ]);
 }
 
 
-async function readPackageJson(config: BuildConfig, ctx: BuildContext) {
+async function readPackageJson(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
   const packageJsonPath = config.sys.path.join(config.rootDir, 'package.json');
 
   let packageJsonText: string;
 
   try {
-    packageJsonText = await ctx.fs.readFile(packageJsonPath);
+    packageJsonText = await compilerCtx.fs.readFile(packageJsonPath);
   } catch (e) {
     throw `Missing "package.json" file for distribution: ${packageJsonPath}`;
   }
 
   const packageJsonData = JSON.parse(packageJsonText);
-  validatePackageJson(config, ctx.diagnostics, packageJsonData);
+  validatePackageJson(config, buildCtx.diagnostics, packageJsonData);
 }
 
 
-export function validatePackageJson(config: BuildConfig, diagnostics: Diagnostic[], data: any) {
+export function validatePackageJson(config: Config, diagnostics: Diagnostic[], data: any) {
   validatePackageFiles(config, diagnostics, data);
 
   const mainFileName = getLoaderFileName(config);
@@ -65,7 +65,7 @@ export function validatePackageJson(config: BuildConfig, diagnostics: Diagnostic
 }
 
 
-function validatePackageJsonTypes(config: BuildConfig, diagnostics: Diagnostic[], data: any) {
+function validatePackageJsonTypes(config: Config, diagnostics: Diagnostic[], data: any) {
   const indexDtsFileAbsPath = config.sys.path.join(config.typesDir, 'index.d.ts');
   const indexDtsFileRelPath = pathJoin(config, config.sys.path.relative(config.rootDir, indexDtsFileAbsPath));
   const componentsDtsFileAbsPath = config.sys.path.join(config.typesDir, 'components.d.ts');
@@ -79,7 +79,7 @@ function validatePackageJsonTypes(config: BuildConfig, diagnostics: Diagnostic[]
 }
 
 
-export function validatePackageFiles(config: BuildConfig, diagnostics: Diagnostic[], packageJsonData: any) {
+export function validatePackageFiles(config: Config, diagnostics: Diagnostic[], packageJsonData: any) {
   if (packageJsonData.files) {
     const actualDistDir = normalizePath(config.sys.path.relative(config.rootDir, config.distDir));
 
@@ -102,12 +102,12 @@ export function validatePackageFiles(config: BuildConfig, diagnostics: Diagnosti
 }
 
 
-function copySourceCollectionComponentsToDistribution(config: BuildConfig, ctx: BuildContext) {
+function copySourceCollectionComponentsToDistribution(config: Config, buildCtx: BuildCtx) {
   // for any components that are dependencies, such as ionicons is a dependency of ionic
   // then we need to copy the dependency to the dist so it just works downstream
   const promises: Promise<any>[] = [];
 
-  ctx.manifest.modulesFiles.forEach(moduleFile => {
+  buildCtx.manifest.modulesFiles.forEach(moduleFile => {
     if (!moduleFile.isCollectionDependency || !moduleFile.originalCollectionComponentPath) return;
 
     const src = moduleFile.jsFilePath;
@@ -121,7 +121,7 @@ function copySourceCollectionComponentsToDistribution(config: BuildConfig, ctx: 
 }
 
 
-async function generateTypes(config: BuildConfig, ctx: BuildContext) {
+async function generateTypes(config: Config, ctx: CompilerCtx) {
   const PromiseList: Promise<any>[] = [];
 
   // If index.d.ts file exists at the root then copy it.

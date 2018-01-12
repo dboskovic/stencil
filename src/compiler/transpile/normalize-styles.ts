@@ -1,7 +1,7 @@
-import { BuildConfig, StylesMeta } from '../../util/interfaces';
+import { Config, StylesMeta } from '../../util/interfaces';
 import { normalizePath } from '../util';
 
-export function normalizeStyles(config: BuildConfig, componentFilePath: string, stylesMeta: StylesMeta) {
+export function normalizeStyles(config: Config, componentFilePath: string, stylesMeta: StylesMeta) {
   const newStylesMeta: StylesMeta = {};
 
   Object.keys(stylesMeta).forEach((modeName) => {
@@ -19,7 +19,7 @@ export function normalizeStyles(config: BuildConfig, componentFilePath: string, 
 }
 
 
-function normalizeModeStylePaths(config: BuildConfig, componentFilePath: string, stylePath: string) {
+function normalizeModeStylePaths(config: Config, componentFilePath: string, stylePath: string) {
   let cmpRelativePath: string;
   let absolutePath: string;
 

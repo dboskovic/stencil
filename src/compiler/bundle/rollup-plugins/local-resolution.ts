@@ -1,7 +1,7 @@
-import { BuildConfig } from '../../../util/interfaces';
+import { Config } from '../../../util/interfaces';
 
 
-export default function localResolver(config: BuildConfig) {
+export default function localResolver(config: Config) {
   return {
     name: 'localResolverPlugin',
 

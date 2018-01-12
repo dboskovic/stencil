@@ -341,8 +341,6 @@ class CmdTimeSpan {
     if (newLineSuffix) {
       console.log('');
     }
-
-    return duration;
   }
 
   private duration() {

@@ -1,4 +1,4 @@
-import { BuildConfig, ComponentRegistry, ComponentMeta, Diagnostic } from '../../../util/interfaces';
+import { Config, ComponentRegistry, ComponentMeta, Diagnostic } from '../../../util/interfaces';
 import { getComponentDecoratorMeta } from './component-decorator';
 import { getElementDecoratorMeta } from './element-decorator';
 import { getEventDecoratorMeta } from './event-decorator';
@@ -11,7 +11,7 @@ import { validateComponentClass } from './validate-component';
 import * as ts from 'typescript';
 
 
-export function gatherMetadata(config: BuildConfig, typechecker: ts.TypeChecker, sourceFileList: ReadonlyArray<ts.SourceFile>): ComponentRegistry {
+export function gatherMetadata(config: Config, typechecker: ts.TypeChecker, sourceFileList: ReadonlyArray<ts.SourceFile>): ComponentRegistry {
   const componentMetaList: ComponentRegistry = {};
   const diagnostics: Diagnostic[] = [];
 
@@ -26,7 +26,7 @@ export function gatherMetadata(config: BuildConfig, typechecker: ts.TypeChecker,
   return componentMetaList;
 }
 
-function visitFactory(config: BuildConfig, checker: ts.TypeChecker, componentMetaList: ComponentRegistry, diagnostics: Diagnostic[]) {
+function visitFactory(config: Config, checker: ts.TypeChecker, componentMetaList: ComponentRegistry, diagnostics: Diagnostic[]) {
 
   return function visit(node: ts.Node, sourceFile: ts.SourceFile) {
     if (ts.isClassDeclaration(node)) {
@@ -41,7 +41,7 @@ function visitFactory(config: BuildConfig, checker: ts.TypeChecker, componentMet
   };
 }
 
-export function visitClass(config: BuildConfig, checker: ts.TypeChecker, classNode: ts.ClassDeclaration, sourceFile: ts.SourceFile, diagnostics: Diagnostic[]): ComponentMeta | undefined {
+export function visitClass(config: Config, checker: ts.TypeChecker, classNode: ts.ClassDeclaration, sourceFile: ts.SourceFile, diagnostics: Diagnostic[]): ComponentMeta | undefined {
   let cmpMeta: ComponentMeta = getComponentDecoratorMeta(checker, classNode);
 
   if (!cmpMeta) {

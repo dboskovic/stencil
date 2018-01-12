@@ -1,59 +1,48 @@
-import { BuildConfig, BuildContext, BuildResults } from '../../util/interfaces';
+import { BuildCtx, Config, CompilerCtx } from '../../util/interfaces';
 import { catchError } from '../util';
 import { copyComponentAssets } from '../component-plugins/assets-plugin';
 import { generateDistribution } from './distribution';
 import { writeAppManifest } from '../manifest/manifest-data';
 
 
-export async function writeBuildFiles(config: BuildConfig, ctx: BuildContext, buildResults: BuildResults) {
+export async function writeBuildFiles(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
   // serialize and write the manifest file if need be
-  writeAppManifest(config, ctx);
+  writeAppManifest(config, compilerCtx, buildCtx);
 
   const timeSpan = config.logger.createTimeSpan(`writeBuildFiles started`, true);
 
-  // congrats, another successful build
-  ctx.buildCount++;
-
   let totalFilesWrote = 0;
+
   try {
-    const files = await ctx.fs.commit();
+    buildCtx.filesWritten = await compilerCtx.fs.commit();
 
-    totalFilesWrote = files.length;
+    totalFilesWrote = buildCtx.filesWritten.length;
 
-    if (config.logger.level === 'debug') {
-      buildResults.stats.files = files;
-
-      ctx.manifest.bundles.forEach(b => {
-        b.components.forEach(c => buildResults.stats.components.push(c));
-      });
-      buildResults.stats.components.sort();
-
-      buildResults.stats.buildCount = ctx.buildCount;
-      buildResults.stats.bundleBuildCount = ctx.bundleBuildCount;
-      buildResults.stats.transpileBuildCount = ctx.transpileBuildCount;
-      buildResults.stats.sassBuildCount = ctx.sassBuildCount;
-    }
+    buildCtx.manifest.bundles.forEach(b => {
+      b.components.forEach(c => buildCtx.components.push(c));
+    });
+    buildCtx.components.sort();
 
   } catch (e) {
-    catchError(ctx.diagnostics, e);
+    catchError(buildCtx.diagnostics, e);
   }
 
   // kick off copying component assets
   // and copy www/build to dist/ if generateDistribution is enabled
   await Promise.all([
-    copyComponentAssets(config, ctx),
-    generateDistribution(config, ctx)
+    copyComponentAssets(config, buildCtx),
+    generateDistribution(config, compilerCtx, buildCtx)
   ]);
 
   timeSpan.finish(`writeBuildFiles finished, files wrote: ${totalFilesWrote}`);
 }
 
 
-export function emptyDestDir(config: BuildConfig, ctx: BuildContext) {
+export function emptyDestDir(config: Config, buildCtx: BuildCtx) {
   // empty promises :(
   const emptyPromises: Promise<any>[] = [];
 
-  if (!ctx.isRebuild) {
+  if (!buildCtx.isRebuild) {
     // don't bother emptying the directories when it's a rebuild
 
     if (config.generateWWW && config.emptyWWW) {

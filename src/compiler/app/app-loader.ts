@@ -1,4 +1,4 @@
-import { AppRegistry, BuildConfig, BuildContext, ComponentRegistry } from '../../util/interfaces';
+import { AppRegistry, Config, CompilerCtx, ComponentRegistry } from '../../util/interfaces';
 import { APP_NAMESPACE_REGEX } from '../../util/constants';
 import { generatePreamble } from '../util';
 import { getAppPublicPath, getLoaderFileName, getLoaderDist, getLoaderWWW } from './app-file-naming';
@@ -6,8 +6,8 @@ import { formatComponentLoaderRegistry } from '../../util/data-serialize';
 
 
 export async function generateLoader(
-  config: BuildConfig,
-  ctx: BuildContext,
+  config: Config,
+  ctx: CompilerCtx,
   appRegistry: AppRegistry,
   cmpRegistry: ComponentRegistry
 ) {
@@ -55,15 +55,13 @@ export async function generateLoader(
       await ctx.fs.writeFile(appLoaderDist, loaderContent);
       ctx.appFiles[appLoaderDist] = loaderContent;
     }
-
-    ctx.appFileBuildCount++;
   }
 
   return loaderContent;
 }
 
 
-function minifyLoader(config: BuildConfig, jsText: string) {
+function minifyLoader(config: Config, jsText: string) {
   // minify the loader
   const opts: any = { output: {}, compress: {}, mangle: {} };
   opts.ecma = 5;
@@ -98,7 +96,7 @@ function minifyLoader(config: BuildConfig, jsText: string) {
 
 
 export function injectAppIntoLoader(
-  config: BuildConfig,
+  config: Config,
   appCoreFileName: string,
   appCoreSsrFileName: string,
   appCorePolyfilledFileName: string,

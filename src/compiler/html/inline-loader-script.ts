@@ -1,8 +1,8 @@
-import { BuildConfig, BuildContext, HydrateResults } from '../../util/interfaces';
+import { Config, CompilerCtx, HydrateResults } from '../../util/interfaces';
 import { getLoaderFileName, getLoaderWWW } from '../app/app-file-naming';
 
 
-export function inlineLoaderScript(config: BuildConfig, ctx: BuildContext, doc: Document, results: HydrateResults) {
+export function inlineLoaderScript(config: Config, ctx: CompilerCtx, doc: Document, results: HydrateResults) {
   // create the script url we'll be looking for
   let loaderExternalSrcUrl = config.publicPath;
   if (loaderExternalSrcUrl.charAt(loaderExternalSrcUrl.length - 1) !== '/') {
@@ -41,7 +41,7 @@ function findExternalLoaderScript(doc: Document, loaderExternalSrcUrl: string) {
 }
 
 
-function relocateInlineLoaderScript(config: BuildConfig, ctx: BuildContext, doc: Document, results: HydrateResults, scriptElm: HTMLScriptElement) {
+function relocateInlineLoaderScript(config: Config, ctx: CompilerCtx, doc: Document, results: HydrateResults, scriptElm: HTMLScriptElement) {
   // get the file path
   const appLoaderWWW = getLoaderWWW(config);
 

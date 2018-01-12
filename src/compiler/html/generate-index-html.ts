@@ -1,27 +1,28 @@
-import { BuildConfig, BuildContext, ServiceWorkerConfig } from '../../util/interfaces';
+import { BuildCtx, Config, CompilerCtx, ServiceWorkerConfig } from '../../util/interfaces';
 import { catchError, hasError } from '../util';
 import { injectRegisterServiceWorker, injectUnregisterServiceWorker } from '../service-worker/inject-sw-script';
 import { generateServiceWorker } from '../service-worker/generate-sw';
 
 
-export async function generateIndexHtml(config: BuildConfig, ctx: BuildContext) {
+export async function generateIndexHtml(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
 
-  if ((ctx.isRebuild && ctx.appFileBuildCount === 0) || hasError(ctx.diagnostics) || !config.generateWWW) {
+  if (canSkipGenerateIndexHtml(config, buildCtx)) {
     // no need to rebuild index.html if there were no app file changes
     return;
   }
 
   // generate the service worker
-  await generateServiceWorker(config, ctx);
+  await generateServiceWorker(config, compilerCtx, buildCtx);
 
   // get the source index html content
   try {
-    const indexSrcHtml = await ctx.fs.readFile(config.srcIndexHtml);
+    const indexSrcHtml = await compilerCtx.fs.readFile(config.srcIndexHtml);
 
     try {
-      setIndexHtmlContent(config, ctx, indexSrcHtml);
+      setIndexHtmlContent(config, compilerCtx, indexSrcHtml);
+
     } catch (e) {
-      catchError(ctx.diagnostics, e);
+      catchError(buildCtx.diagnostics, e);
     }
 
   } catch (e) {
@@ -31,7 +32,16 @@ export async function generateIndexHtml(config: BuildConfig, ctx: BuildContext) 
 }
 
 
-function setIndexHtmlContent(config: BuildConfig, ctx: BuildContext, indexHtml: string) {
+function canSkipGenerateIndexHtml(config: Config, buildCtx: BuildCtx) {
+  if ((buildCtx.isRebuild && buildCtx.appFileBuildCount === 0) || hasError(buildCtx.diagnostics) || !config.generateWWW) {
+    // no need to rebuild index.html if there were no app file changes
+    return true;
+  }
+  return false;
+}
+
+
+function setIndexHtmlContent(config: Config, ctx: CompilerCtx, indexHtml: string) {
   const swConfig = config.serviceWorker as ServiceWorkerConfig;
 
   if (!swConfig && config.devMode) {

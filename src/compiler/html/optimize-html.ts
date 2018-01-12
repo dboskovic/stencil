@@ -1,4 +1,4 @@
-import { BuildConfig, BuildContext, HydrateOptions, HydrateResults } from '../../util/interfaces';
+import { Config, CompilerCtx, HydrateOptions, HydrateResults } from '../../util/interfaces';
 import { collapseHtmlWhitepace } from './collapse-html-whitespace';
 import { inlineLoaderScript } from './inline-loader-script';
 import { inlineComponentStyles } from '../css/inline-styles';
@@ -6,7 +6,7 @@ import { inlineExternalAssets } from './inline-external-assets';
 import { insertCanonicalLink } from './canonical-link';
 
 
-export function optimizeHtml(config: BuildConfig, ctx: BuildContext, doc: Document, styles: string[], opts: HydrateOptions, results: HydrateResults) {
+export function optimizeHtml(config: Config, ctx: CompilerCtx, doc: Document, styles: string[], opts: HydrateOptions, results: HydrateResults) {
   setHtmlDataSsrAttr(doc);
 
   if (opts.canonicalLink !== false) {

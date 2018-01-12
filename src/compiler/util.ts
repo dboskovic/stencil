@@ -1,39 +1,26 @@
 import { BANNER } from '../util/constants';
-import { BuildConfig, BuildContext, Diagnostic, StencilSystem } from '../util/interfaces';
+import { Config, CompilerCtx, Diagnostic, StencilSystem } from '../util/interfaces';
 import { BuildEvents } from './events';
 
 
-export function getBuildContext(sys: StencilSystem, ctx: BuildContext = {}) {
-  ctx.fs = ctx.fs || sys.createFileSystem();
-  ctx.events = ctx.events || new BuildEvents();
-  ctx.diagnostics = ctx.diagnostics || [];
-  ctx.manifest = ctx.manifest || {};
-  ctx.appFiles = ctx.appFiles || {};
-  ctx.appGlobalStyles = ctx.appGlobalStyles || {};
-  ctx.coreBuilds = ctx.coreBuilds || {};
-  ctx.moduleFiles = ctx.moduleFiles || {};
-  ctx.rollupCache = ctx.rollupCache || {};
-  ctx.dependentManifests = ctx.dependentManifests || {};
-  ctx.moduleBundleOutputs = ctx.moduleBundleOutputs || {};
-  ctx.moduleBundleLegacyOutputs = ctx.moduleBundleLegacyOutputs || {};
-  ctx.changedFiles = ctx.changedFiles || [];
+export function getCompilerContext(sys: StencilSystem, compilerCtx: CompilerCtx = {}) {
+  // reusable data between builds
+  compilerCtx.fs = compilerCtx.fs || sys.createFileSystem();
+  compilerCtx.events = compilerCtx.events || new BuildEvents();
+  compilerCtx.appFiles = compilerCtx.appFiles || {};
+  compilerCtx.appGlobalStyles = compilerCtx.appGlobalStyles || {};
+  compilerCtx.coreBuilds = compilerCtx.coreBuilds || {};
+  compilerCtx.moduleFiles = compilerCtx.moduleFiles || {};
+  compilerCtx.rollupCache = compilerCtx.rollupCache || {};
+  compilerCtx.dependentManifests = compilerCtx.dependentManifests || {};
+  compilerCtx.moduleBundleOutputs = compilerCtx.moduleBundleOutputs || {};
+  compilerCtx.moduleBundleLegacyOutputs = compilerCtx.moduleBundleLegacyOutputs || {};
 
-  if (typeof ctx.buildCount !== 'number') {
-    ctx.buildCount = 0;
+  if (typeof compilerCtx.activeBuildId !== 'number') {
+    compilerCtx.activeBuildId = 0;
   }
 
-  return ctx;
-}
-
-
-export function resetBuildContext(ctx: BuildContext) {
-  ctx.manifest = {};
-  ctx.diagnostics = [];
-  ctx.sassBuildCount = 0;
-  ctx.transpileBuildCount = 0;
-  ctx.indexBuildCount = 0;
-  ctx.bundleBuildCount = 0;
-  delete ctx.localPrerenderServer;
+  return compilerCtx;
 }
 
 
@@ -97,7 +84,7 @@ export function isWebDevFile(filePath: string) {
 const WEB_DEV_EXT = ['js', 'jsx', 'html', 'htm', 'css', 'scss', 'sass'];
 
 
-export function generatePreamble(config: BuildConfig) {
+export function generatePreamble(config: Config) {
   let preamble: string[] = [];
 
   if (config.preamble) {
@@ -192,7 +179,7 @@ export function hasError(diagnostics: Diagnostic[]): boolean {
 }
 
 
-export function pathJoin(config: BuildConfig, ...paths: string[]) {
+export function pathJoin(config: Config, ...paths: string[]) {
   return normalizePath(config.sys.path.join.apply(config.sys.path, paths));
 }
 

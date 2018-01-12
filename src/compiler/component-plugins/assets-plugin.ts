@@ -1,10 +1,10 @@
-import { AssetsMeta, BuildConfig, BuildContext } from '../../util/interfaces';
+import { AssetsMeta, BuildCtx, Config } from '../../util/interfaces';
 import { catchError, normalizePath } from '../util';
 import { COLLECTION_DEPENDENCIES_DIR } from '../manifest/manifest-data';
 import { getAppDistDir, getAppWWWBuildDir } from '../app/app-file-naming';
 
 
-export function normalizeAssetsDir(config: BuildConfig, componentFilePath: string, assetsMetas: AssetsMeta[])  {
+export function normalizeAssetsDir(config: Config, componentFilePath: string, assetsMetas: AssetsMeta[])  {
   return assetsMetas.map((assetMeta) => {
     return {
       ...assetMeta,
@@ -14,7 +14,7 @@ export function normalizeAssetsDir(config: BuildConfig, componentFilePath: strin
 }
 
 
-function normalizeAssetDir(config: BuildConfig, componentFilePath: string, assetsDir: string): AssetsMeta {
+function normalizeAssetDir(config: Config, componentFilePath: string, assetsDir: string): AssetsMeta {
 
   const assetsMeta: AssetsMeta = {};
 
@@ -44,9 +44,9 @@ function normalizeAssetDir(config: BuildConfig, componentFilePath: string, asset
 }
 
 
-export function copyComponentAssets(config: BuildConfig, ctx: BuildContext) {
+export function copyComponentAssets(config: Config, buildCtx: BuildCtx) {
 
-  if (skipAssetsCopy(config, ctx)) {
+  if (skipAssetsCopy(config, buildCtx)) {
     // no need to recopy all assets again
     return Promise.resolve();
   }
@@ -58,7 +58,7 @@ export function copyComponentAssets(config: BuildConfig, ctx: BuildContext) {
   const copyToBuildDir: AssetsMeta[] = [];
   const copyToCollectionDir: AssetsMeta[] = [];
 
-  ctx.manifest.modulesFiles.forEach(moduleFile => {
+  buildCtx.manifest.modulesFiles.forEach(moduleFile => {
     if (!moduleFile.cmpMeta.assetsDirsMeta || !moduleFile.cmpMeta.assetsDirsMeta.length) return;
 
     moduleFile.cmpMeta.assetsDirsMeta.forEach(assetsMeta => {
@@ -115,7 +115,7 @@ export function copyComponentAssets(config: BuildConfig, ctx: BuildContext) {
   }
 
   return Promise.all(dirCopyPromises).catch(err => {
-    catchError(ctx.diagnostics, err);
+    catchError(buildCtx.diagnostics, err);
 
   }).then(() => {
     timeSpan.finish('copy assets finished');
@@ -123,7 +123,7 @@ export function copyComponentAssets(config: BuildConfig, ctx: BuildContext) {
 }
 
 
-export function getCollectionDirDestination(config: BuildConfig, assetsMeta: AssetsMeta) {
+export function getCollectionDirDestination(config: Config, assetsMeta: AssetsMeta) {
   // figure out what the path is to the component directory
 
   if (assetsMeta.originalCollectionPath) {
@@ -142,39 +142,39 @@ export function getCollectionDirDestination(config: BuildConfig, assetsMeta: Ass
 }
 
 
-export function skipAssetsCopy(config: BuildConfig, ctx: BuildContext) {
-  // always copy assets if it's not a rebuild
-  if (!ctx.isRebuild) return false;
+export function skipAssetsCopy(_config: Config, _ctx: BuildCtx) {
+  // // always copy assets if it's not a rebuild
+  // if (!ctx.isRebuild) return false;
 
-  // assume we want to skip copying assets again
-  let shouldSkipAssetsCopy = true;
+  // // assume we want to skip copying assets again
+  // let shouldSkipAssetsCopy = true;
 
-  // loop through each of the changed files
-  ctx.changedFiles.forEach(changedFile => {
-    // get the directory of where the changed file is in
-    const changedFileDirPath = normalizePath(config.sys.path.dirname(changedFile));
+  // // loop through each of the changed files
+  // ctx.changedFiles.forEach(changedFile => {
+  //   // get the directory of where the changed file is in
+  //   const changedFileDirPath = normalizePath(config.sys.path.dirname(changedFile));
 
-    // loop through all the possible asset directories
-    ctx.manifest.modulesFiles.forEach(moduleFile => {
-      if (moduleFile.cmpMeta && moduleFile.cmpMeta.assetsDirsMeta) {
+  //   // loop through all the possible asset directories
+  //   ctx.manifest.modulesFiles.forEach(moduleFile => {
+  //     if (moduleFile.cmpMeta && moduleFile.cmpMeta.assetsDirsMeta) {
 
-        // loop through each of the asset directories of each component
-        moduleFile.cmpMeta.assetsDirsMeta.forEach(assetsDir => {
-          // get the absolute of the asset directory
-          const assetDirPath = normalizePath(assetsDir.absolutePath);
+  //       // loop through each of the asset directories of each component
+  //       moduleFile.cmpMeta.assetsDirsMeta.forEach(assetsDir => {
+  //         // get the absolute of the asset directory
+  //         const assetDirPath = normalizePath(assetsDir.absolutePath);
 
-          // if the changed file directory is this asset directory
-          // then we should recopy everything over again
-          if (changedFileDirPath === assetDirPath) {
-            shouldSkipAssetsCopy = false;
-            return;
-          }
-        });
+  //         // if the changed file directory is this asset directory
+  //         // then we should recopy everything over again
+  //         if (changedFileDirPath === assetDirPath) {
+  //           shouldSkipAssetsCopy = false;
+  //           return;
+  //         }
+  //       });
 
-      }
-    });
+  //     }
+  //   });
 
-  });
+  // });
 
-  return shouldSkipAssetsCopy;
+  // return shouldSkipAssetsCopy;
 }

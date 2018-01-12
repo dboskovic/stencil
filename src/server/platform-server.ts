@@ -1,4 +1,4 @@
-import { AppGlobal, BuildConfig, BuildContext, CjsExports,
+import { AppGlobal, Config, CompilerCtx, CjsExports,
   ComponentMeta, ComponentRegistry, CoreContext, Diagnostic,
   HostElement, PlatformApi, HydrateResults } from '../util/interfaces';
 import { assignHostContentSlots } from '../core/renderer/slot';
@@ -15,13 +15,13 @@ import { toDashCase } from '../util/helpers';
 
 
 export function createPlatformServer(
-  config: BuildConfig,
+  config: Config,
   win: any,
   doc: any,
   cmpRegistry: ComponentRegistry,
   hydrateResults: HydrateResults,
   isPrerender: boolean,
-  ctx?: BuildContext
+  ctx?: CompilerCtx
 ): PlatformApi {
   const styles: string[] = [];
   const controllerComponents: {[tag: string]: HostElement} = {};

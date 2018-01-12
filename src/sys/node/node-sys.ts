@@ -1,4 +1,4 @@
-import { BuildConfig, Diagnostic, PackageJsonData, StencilSystem } from '../../util/interfaces';
+import { Config, Diagnostic, PackageJsonData, StencilSystem } from '../../util/interfaces';
 import { createContext, runInContext } from './node-context';
 import { createDom } from './node-dom';
 import { NodeFileSystem } from './node-fs';
@@ -79,7 +79,7 @@ export class NodeSystem implements StencilSystem {
 
     watcher
       .on('change', (path: string) => {
-        events.emit('fileChange', path);
+        events.emit('fileUpdate', path);
       })
       .on('add', (path: string) => {
         events.emit('fileAdd', path);
@@ -191,7 +191,7 @@ export class NodeSystem implements StencilSystem {
   }
 
   loadConfigFile(configPath: string) {
-    let config: BuildConfig;
+    let config: Config;
 
     if (!this.nodePath.isAbsolute(configPath)) {
       throw new Error(`Stencil configuration file "${configPath}" must be an absolute path.`);

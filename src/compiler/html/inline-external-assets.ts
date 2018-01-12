@@ -1,8 +1,8 @@
-import { BuildConfig, BuildContext, HydrateResults, Url } from '../../util/interfaces';
+import { Config, CompilerCtx, HydrateResults, Url } from '../../util/interfaces';
 import { pathJoin } from '../util';
 
 
-export function inlineExternalAssets(config: BuildConfig, ctx: BuildContext, results: HydrateResults, doc: Document) {
+export function inlineExternalAssets(config: Config, ctx: CompilerCtx, results: HydrateResults, doc: Document) {
   const linkElements = doc.querySelectorAll('link[href][rel="stylesheet"]') as any;
   for (var i = 0; i < linkElements.length; i++) {
     inlineStyle(config, ctx, results, doc, linkElements[i] as any);
@@ -15,7 +15,7 @@ export function inlineExternalAssets(config: BuildConfig, ctx: BuildContext, res
 }
 
 
-function inlineStyle(config: BuildConfig, ctx: BuildContext, results: HydrateResults, doc: Document, linkElm: HTMLLinkElement) {
+function inlineStyle(config: Config, ctx: CompilerCtx, results: HydrateResults, doc: Document, linkElm: HTMLLinkElement) {
   const content = getAssetContent(config, ctx, results, linkElm.href);
   if (!content) {
     return;
@@ -31,7 +31,7 @@ function inlineStyle(config: BuildConfig, ctx: BuildContext, results: HydrateRes
 }
 
 
-function inlineScript(config: BuildConfig, ctx: BuildContext, results: HydrateResults, scriptElm: HTMLScriptElement) {
+function inlineScript(config: Config, ctx: CompilerCtx, results: HydrateResults, scriptElm: HTMLScriptElement) {
   const content = getAssetContent(config, ctx, results, scriptElm.src);
   if (!content) {
     return;
@@ -44,7 +44,7 @@ function inlineScript(config: BuildConfig, ctx: BuildContext, results: HydrateRe
 }
 
 
-function getAssetContent(config: BuildConfig, ctx: BuildContext, results: HydrateResults, assetUrl: string) {
+function getAssetContent(config: Config, ctx: CompilerCtx, results: HydrateResults, assetUrl: string) {
   // figure out the url's so we can check the hostnames
   const fromUrl = config.sys.url.parse(results.url);
   const toUrl = config.sys.url.parse(assetUrl);
@@ -82,7 +82,7 @@ function getAssetContent(config: BuildConfig, ctx: BuildContext, results: Hydrat
 }
 
 
-export function getFilePathFromUrl(config: BuildConfig, fromUrl: Url, toUrl: Url) {
+export function getFilePathFromUrl(config: Config, fromUrl: Url, toUrl: Url) {
   const resolvedUrl = '.' + config.sys.url.resolve(fromUrl.pathname, toUrl.pathname);
   return pathJoin(config, config.wwwDir, resolvedUrl);
 }

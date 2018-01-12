@@ -1,8 +1,8 @@
-import { BuildContext, ComponentMeta, BuildConditionals, Bundle, ModuleFile, BuildConfig } from '../../util/interfaces';
+import { CompilerCtx, ComponentMeta, BuildConditionals, Bundle, ModuleFile, Config } from '../../util/interfaces';
 import { ENCAPSULATION, MEMBER_TYPE, PROP_TYPE } from '../../util/constants';
 
 
-export async function setBuildConditionals(config: BuildConfig, ctx: BuildContext, bundles: Bundle[]) {
+export async function setBuildConditionals(config: Config, ctx: CompilerCtx, bundles: Bundle[]) {
   // figure out which sections of the core code this build doesn't even need
   const coreBuild: BuildConditionals = ({} as any);
   coreBuild.clientSide = true;
@@ -23,7 +23,7 @@ export async function setBuildConditionals(config: BuildConfig, ctx: BuildContex
 }
 
 
-async function setBuildFromComponent(config: BuildConfig, ctx: BuildContext, coreBuild: BuildConditionals, moduleFile: ModuleFile) {
+async function setBuildFromComponent(config: Config, ctx: CompilerCtx, coreBuild: BuildConditionals, moduleFile: ModuleFile) {
   setBuildFromComponentMeta(coreBuild, moduleFile.cmpMeta);
 
   if (moduleFile.jsFilePath) {

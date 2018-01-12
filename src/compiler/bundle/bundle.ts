@@ -1,4 +1,4 @@
-import { BuildConfig, BuildContext, Bundle, ComponentMeta, Diagnostic, ManifestBundle, ModuleFile } from '../../util/interfaces';
+import { BuildCtx, Bundle, CompilerCtx, ComponentMeta, Config, Diagnostic, ManifestBundle, ModuleFile } from '../../util/interfaces';
 import { buildError, catchError, hasError } from '../util';
 import { bundleModules } from './bundle-modules';
 import { bundleStyles } from './bundle-styles';
@@ -7,10 +7,10 @@ import { upgradeDependentComponents } from '../upgrade-dependents/index';
 import { requiresScopedStyles } from './component-styles';
 
 
-export async function bundle(config: BuildConfig, ctx: BuildContext) {
+export async function bundle(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
   let bundles: Bundle[] = [];
 
-  if (hasError(ctx.diagnostics)) {
+  if (hasError(buildCtx.diagnostics)) {
     return bundles;
   }
 
@@ -26,20 +26,20 @@ export async function bundle(config: BuildConfig, ctx: BuildContext) {
 
   try {
     // get all of the bundles from the manifest bundles
-    bundles = getBundlesFromManifest(ctx.manifest.modulesFiles, ctx.manifest.bundles, ctx.diagnostics);
+    bundles = getBundlesFromManifest(buildCtx.manifest.modulesFiles, buildCtx.manifest.bundles, buildCtx.diagnostics);
 
     // Look at all dependent components from outside collections and
     // upgrade the components to be compatible with this version if need be
-    await upgradeDependentComponents(config, ctx, bundles);
+    await upgradeDependentComponents(config, compilerCtx, bundles);
 
     // kick off style and module bundling at the same time
     await Promise.all([
-      bundleStyles(config, ctx, bundles),
-      bundleModules(config, ctx, bundles)
+      bundleStyles(config, compilerCtx, buildCtx, bundles),
+      bundleModules(config, compilerCtx, buildCtx, bundles)
     ]);
 
   } catch (e) {
-    catchError(ctx.diagnostics, e);
+    catchError(buildCtx.diagnostics, e);
   }
 
   timeSpan.finish(`bundle finished`);

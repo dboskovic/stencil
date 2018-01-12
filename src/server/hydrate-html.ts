@@ -1,4 +1,4 @@
-import { BuildConfig, BuildContext, ComponentRegistry, HydrateOptions, HydrateResults, VNode } from '../util/interfaces';
+import { Config, CompilerCtx, ComponentRegistry, HydrateOptions, HydrateResults, VNode } from '../util/interfaces';
 import { collectAnchors, generateFailureDiagnostic, generateHydrateResults, normalizeDirection, normalizeLanguage, normalizeHydrateOptions } from './hydrate-utils';
 import { connectChildElements } from './connect-element';
 import { createPlatformServer } from './platform-server';
@@ -6,7 +6,7 @@ import { optimizeHtml } from '../compiler/html/optimize-html';
 import { SSR_VNODE_ID } from '../util/constants';
 
 
-export function hydrateHtml(config: BuildConfig, ctx: BuildContext, cmpRegistry: ComponentRegistry, opts: HydrateOptions): Promise<HydrateResults> {
+export function hydrateHtml(config: Config, ctx: CompilerCtx, cmpRegistry: ComponentRegistry, opts: HydrateOptions): Promise<HydrateResults> {
   return new Promise(resolve => {
 
     // validate the hydrate options and add any missing info

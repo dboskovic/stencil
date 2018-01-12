@@ -1,10 +1,10 @@
 import { addStaticMeta } from '../add-component-metadata';
-import { BuildConfig, Bundle, ComponentMeta } from '../../../../util/interfaces';
+import { Config, Bundle, ComponentMeta } from '../../../../util/interfaces';
 import { normalizePath } from '../../../util';
 import * as ts from 'typescript';
 
 
-export default function upgradeFromMetadata(config: BuildConfig, bundles: Bundle[]) {
+export default function upgradeFromMetadata(config: Config, bundles: Bundle[]) {
 
   return (tsSourceFile: ts.SourceFile) => {
     const tsFilePath = normalizePath(tsSourceFile.fileName);
@@ -28,7 +28,7 @@ export default function upgradeFromMetadata(config: BuildConfig, bundles: Bundle
 }
 
 
-function upgradeModuleFile(config: BuildConfig, tsSourceFile: ts.SourceFile, cmpMeta: ComponentMeta) {
+function upgradeModuleFile(config: Config, tsSourceFile: ts.SourceFile, cmpMeta: ComponentMeta) {
   const staticMembers = addStaticMeta(config, cmpMeta);
 
   const newStatements: any = Object.keys(staticMembers).map(memberName => {

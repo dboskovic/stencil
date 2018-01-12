@@ -1,12 +1,12 @@
-import { BuildConfig, BuildContext, BuildConditionals, SourceTarget } from '../../util/interfaces';
+import { Config, CompilerCtx, BuildConditionals, SourceTarget, BuildCtx } from '../../util/interfaces';
 import { transpileCoreBuild } from '../transpile/core-build';
 
 
-export function buildCoreContent(config: BuildConfig, ctx: BuildContext, coreBuild: BuildConditionals, coreContent: string) {
+export function buildCoreContent(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx, coreBuild: BuildConditionals, coreContent: string) {
   const cacheKey = getCoreCacheKey(coreBuild);
 
-  if (typeof ctx.coreBuilds[cacheKey] === 'string') {
-    return ctx.coreBuilds[cacheKey];
+  if (typeof compilerCtx.coreBuilds[cacheKey] === 'string') {
+    return compilerCtx.coreBuilds[cacheKey];
   }
 
   const timespan = config.logger.createTimeSpan(`buildCoreContent ${coreBuild.coreId} start`, true);
@@ -14,7 +14,7 @@ export function buildCoreContent(config: BuildConfig, ctx: BuildContext, coreBui
   const transpileResults = transpileCoreBuild(coreBuild, coreContent);
 
   if (transpileResults.diagnostics && transpileResults.diagnostics.length) {
-    ctx.diagnostics.push(...transpileResults.diagnostics);
+    buildCtx.diagnostics.push(...transpileResults.diagnostics);
     return coreContent;
   }
 
@@ -25,13 +25,13 @@ export function buildCoreContent(config: BuildConfig, ctx: BuildContext, coreBui
   const minifyResults = minifyCore(config, sourceTarget, coreContent);
 
   if (minifyResults.diagnostics && minifyResults.diagnostics.length) {
-    ctx.diagnostics.push(...minifyResults.diagnostics);
+    buildCtx.diagnostics.push(...minifyResults.diagnostics);
     return coreContent;
   }
 
   timespan.finish(`buildCoreContent ${coreBuild.coreId} finished`);
 
-  ctx.coreBuilds[cacheKey] = minifyResults.output;
+  compilerCtx.coreBuilds[cacheKey] = minifyResults.output;
 
   return minifyResults.output;
 }
@@ -50,7 +50,7 @@ function getCoreCacheKey(coreBuild: BuildConditionals) {
 }
 
 
-function minifyCore(config: BuildConfig, sourceTarget: SourceTarget, input: string) {
+function minifyCore(config: Config, sourceTarget: SourceTarget, input: string) {
   const opts: any = Object.assign({}, config.minifyJs ? PROD_MINIFY_OPTS : DEV_MINIFY_OPTS);
 
   if (sourceTarget === 'es5') {

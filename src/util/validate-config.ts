@@ -1,9 +1,9 @@
-import { BuildConfig, ManifestBundle, CopyTasks, DependentCollection } from './interfaces';
+import { Config, ManifestBundle, CopyTasks, DependentCollection } from './interfaces';
 import { dashToPascalCase } from '../util/helpers';
 import { normalizePath } from '../compiler/util';
 
 
-export function validateBuildConfig(config: BuildConfig, setEnvVariables?: boolean) {
+export function validateBuildConfig(config: Config, setEnvVariables?: boolean) {
   if (!config) {
     throw new Error(`invalid build config`);
   }
@@ -253,7 +253,7 @@ export function validateBuildConfig(config: BuildConfig, setEnvVariables?: boole
 }
 
 
-export function validateNamespace(config: BuildConfig) {
+export function validateNamespace(config: Config) {
   if (typeof config.namespace !== 'string') {
     config.namespace = DEFAULT_NAMESPACE;
   }
@@ -291,7 +291,7 @@ export function validateNamespace(config: BuildConfig) {
 }
 
 
-export function setProcessEnvironment(config: BuildConfig) {
+export function setProcessEnvironment(config: Config) {
   process.env.NODE_ENV = config.devMode ? 'development' : 'production';
 }
 

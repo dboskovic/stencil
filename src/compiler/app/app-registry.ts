@@ -1,8 +1,8 @@
-import { AppRegistry, BuildConfig, BuildContext, ComponentRegistry, AppRegistryComponents } from '../../util/interfaces';
+import { AppRegistry, Config, CompilerCtx, ComponentRegistry, AppRegistryComponents } from '../../util/interfaces';
 import { getLoaderFileName, getRegistryJsonWWW } from './app-file-naming';
 
 
-export function createAppRegistry(config: BuildConfig) {
+export function createAppRegistry(config: Config) {
   // create the shared app registry object
   const appRegistry: AppRegistry = {
     namespace: config.namespace,
@@ -14,7 +14,7 @@ export function createAppRegistry(config: BuildConfig) {
 }
 
 
-export function getAppRegistry(config: BuildConfig, ctx: BuildContext) {
+export function getAppRegistry(config: Config, ctx: CompilerCtx) {
   const registryJsonFilePath = getRegistryJsonWWW(config);
   let appRegistry: AppRegistry;
 
@@ -46,7 +46,7 @@ export function serializeComponentRegistry(cmpRegistry: ComponentRegistry) {
 }
 
 
-export function writeAppRegistry(config: BuildConfig, ctx: BuildContext, appRegistry: AppRegistry, cmpRegistry: ComponentRegistry) {
+export function writeAppRegistry(config: Config, ctx: CompilerCtx, appRegistry: AppRegistry, cmpRegistry: ComponentRegistry) {
   if (!config.generateWWW) {
     // only create a registry for www builds
     return;

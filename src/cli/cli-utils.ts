@@ -1,7 +1,7 @@
-import { BuildConfig, Diagnostic, StencilSystem } from '../util/interfaces';
+import { Config, Diagnostic, StencilSystem } from '../util/interfaces';
 
 
-export function overrideConfigFromArgv(config: BuildConfig, argv: CliArgv) {
+export function overrideConfigFromArgv(config: Config, argv: CliArgv) {
   if (argv.prod) {
     config.devMode = false;
 

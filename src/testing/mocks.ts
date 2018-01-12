@@ -1,4 +1,4 @@
-import { BuildConfig, ComponentMeta, ComponentRegistry, DomApi, HostContentNodes, HostElement,
+import { ComponentMeta, ComponentRegistry, Config, DomApi, HostContentNodes, HostElement,
   HydrateOptions, HydrateResults, Logger, PlatformApi, RendererApi, StencilSystem, VNode } from '../util/interfaces';
 import { ComponentInstance } from '../util/interfaces';
 import { createDomApi } from '../core/renderer/dom-api';
@@ -17,7 +17,7 @@ export function mockPlatform(win?: any, domApi?: DomApi) {
   const hydrateResults: HydrateResults = {
     diagnostics: []
   };
-  const config = mockBuildConfig();
+  const config = mockConfig();
   win = win || config.sys.createDom().parse({html: ''});
   domApi = domApi || createDomApi(win, win.document);
   const cmpRegistry: ComponentRegistry = {};
@@ -68,10 +68,10 @@ export interface MockedPlatform extends PlatformApi {
 }
 
 
-export function mockBuildConfig() {
+export function mockConfig() {
   var sys = mockStencilSystem();
 
-  const config: BuildConfig = {
+  const config: Config = {
     sys: sys,
     logger: mockLogger(),
     rootDir: '/',

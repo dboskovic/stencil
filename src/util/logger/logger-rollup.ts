@@ -1,10 +1,10 @@
-import { BuildConfig, BuildContext, Diagnostic, ModuleFile, PrintLine } from '../interfaces';
+import { Config, CompilerCtx, Diagnostic, ModuleFile, PrintLine, BuildCtx } from '../interfaces';
 import { buildWarn } from '../../compiler/util';
 import { formatFileName, formatHeader, splitLineBreaks } from './logger-util';
 import { highlight } from './highlight/highlight';
 
 
-export function loadRollupDiagnostics(config: BuildConfig, ctx: BuildContext, rollupError: any) {
+export function loadRollupDiagnostics(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx, rollupError: any) {
   const d: Diagnostic = {
     level: 'error',
     type: 'build',
@@ -22,7 +22,7 @@ export function loadRollupDiagnostics(config: BuildConfig, ctx: BuildContext, ro
     d.relFilePath = formatFileName(config.rootDir, d.absFilePath);
 
     try {
-      let sourceText = ctx.fs.readFileSync(d.absFilePath);
+      let sourceText = compilerCtx.fs.readFileSync(d.absFilePath);
       let srcLines = splitLineBreaks(sourceText);
       let htmlLines = srcLines;
 
@@ -104,7 +104,7 @@ export function loadRollupDiagnostics(config: BuildConfig, ctx: BuildContext, ro
     }
   }
 
-  ctx.diagnostics.push(d);
+  buildCtx.diagnostics.push(d);
 }
 
 const CHAR_BREAK = [' ', '=', '.', ',', '?', ':', ';', '(', ')', '{', '}', '[', ']', '|', `'`, `"`, '`'];

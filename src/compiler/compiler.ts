@@ -1,13 +1,13 @@
-import { BuildConfig, BuildContext, BuildResults, InMemoryFileSystem } from '../util/interfaces';
+import { Config, CompilerCtx, BuildResults, InMemoryFileSystem } from '../util/interfaces';
 import { build } from './build/build';
 import { docs } from './docs/docs';
 import { BuildEvents } from './events';
 
 
 export class Compiler {
-  private ctx: BuildContext;
+  private ctx: CompilerCtx;
 
-  constructor(public config: BuildConfig) {
+  constructor(public config: Config) {
     this.ctx = {
       events: new BuildEvents(),
       fs: config.sys.createFileSystem()

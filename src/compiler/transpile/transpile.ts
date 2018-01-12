@@ -1,6 +1,6 @@
 import addComponentMetadata from './transformers/add-component-metadata';
-import { BuildConfig, BuildContext, Diagnostic, ModuleFiles, TranspileResults } from '../../util/interfaces';
-import { hasError, isTsFile, isDtsFile, pathJoin } from '../util';
+import { Config, CompilerCtx, Diagnostic, ModuleFiles, TranspileResults, BuildCtx } from '../../util/interfaces';
+import { hasError, pathJoin } from '../util';
 import { COMPONENTS_DTS } from '../build/distribution';
 import { gatherMetadata } from './datacollection/index';
 import { generateComponentTypesFile } from './create-component-types';
@@ -17,7 +17,7 @@ import * as ts from 'typescript';
 /**
  * This is only used during TESTING
  */
-export function transpileModule(config: BuildConfig, compilerOptions: ts.CompilerOptions, path: string, input: string) {
+export function transpileModule(config: Config, compilerOptions: ts.CompilerOptions, path: string, input: string) {
   const moduleFiles: ModuleFiles = {};
   const diagnostics: Diagnostic[] = [];
   const results: TranspileResults = {
@@ -70,16 +70,13 @@ export function transpileModule(config: BuildConfig, compilerOptions: ts.Compile
 }
 
 
-export function transpileModules(config: BuildConfig, ctx: BuildContext) {
-  if (hasError(ctx.diagnostics)) {
+export function transpileModules(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx, tsFilePaths: string[]) {
+  if (hasError(buildCtx.diagnostics)) {
     // we've already got an error, let's not continue
     return;
   }
 
-  // get all of the typescript source file paths we want to transpile
-  const tsFilePaths = getTsFilePaths(ctx);
-
-  if (!tsFilePaths.length) {
+  if (tsFilePaths.length === 0) {
     // don't bother if there are no ts files to transpile
     return;
   }
@@ -97,7 +94,7 @@ export function transpileModules(config: BuildConfig, ctx: BuildContext) {
 
   // get the ts compiler host we'll use, which patches file operations
   // with our in-memory file system
-  const tsHost = getTsHost(config, ctx, tsOptions);
+  const tsHost = getTsHost(config, compilerCtx, tsOptions);
 
   // fire up the typescript program
   const componentsFilePath = pathJoin(config, config.srcDir, COMPONENTS_DTS);
@@ -113,7 +110,7 @@ export function transpileModules(config: BuildConfig, ctx: BuildContext) {
     fileMetadata.assetsDirsMeta = normalizeAssetsDir(config, tsFilePath, fileMetadata.assetsDirsMeta);
 
     // assign metadata to module files
-    const moduleFile = ctx.moduleFiles[tsFilePath];
+    const moduleFile = compilerCtx.moduleFiles[tsFilePath];
     if (moduleFile) {
       moduleFile.cmpMeta = fileMetadata;
     }
@@ -121,34 +118,34 @@ export function transpileModules(config: BuildConfig, ctx: BuildContext) {
 
   // Generate d.ts files for component types
   const componentTypesFileContent = generateComponentTypesFile(config, metadata);
-  ctx.fs.writeFileSync(componentsFilePath, componentTypesFileContent);
+  compilerCtx.fs.writeFileSync(componentsFilePath, componentTypesFileContent);
 
   // create or reuse a module file file object
-  ctx.moduleFiles[componentsFilePath] = ctx.moduleFiles[componentsFilePath] || {};
-  ctx.moduleFiles[componentsFilePath].tsFilePath = componentsFilePath;
+  compilerCtx.moduleFiles[componentsFilePath] = compilerCtx.moduleFiles[componentsFilePath] || {};
+  compilerCtx.moduleFiles[componentsFilePath].tsFilePath = componentsFilePath;
 
   // keep track of how many files we transpiled (great for debugging/testing)
-  ctx.transpileBuildCount = tsFilePaths.length;
+  buildCtx.transpileBuildCount = tsFilePaths.length;
 
   // create another program
   const program = ts.createProgram(tsFilePaths, tsOptions, tsHost, checkProgram);
 
   // run the program again with our new typed info
-  transpileProgram(program, tsHost, config, ctx);
+  transpileProgram(program, tsHost, config, compilerCtx, buildCtx);
 
   // done and done
   timespace.finish(`transpileModules finished`);
 }
 
 
-function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: BuildConfig, ctx: BuildContext) {
+function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
 
   // this is the big one, let's go ahead and kick off the transpiling
   program.emit(undefined, tsHost.writeFile, undefined, false, {
     before: [
       removeDecorators(),
       removeImports(),
-      addComponentMetadata(config, ctx.moduleFiles)
+      addComponentMetadata(config, compilerCtx.moduleFiles)
     ]
   });
 
@@ -159,26 +156,8 @@ function transpileProgram(program: ts.Program, tsHost: ts.CompilerHost, config: 
     program.getSemanticDiagnostics().forEach(d => tsDiagnostics.push(d));
     program.getOptionsDiagnostics().forEach(d => tsDiagnostics.push(d));
 
-    loadTypeScriptDiagnostics(config.rootDir, ctx.diagnostics, tsDiagnostics);
+    loadTypeScriptDiagnostics(config.rootDir, buildCtx.diagnostics, tsDiagnostics);
   }
-}
-
-
-function getTsFilePaths(ctx: BuildContext) {
-  if (!ctx.isRebuild || ctx.requiresFullTypescriptRebuild) {
-    // this is the first build, so let's get all the ts file paths
-    // from the already collected object of moduleFiles
-    // or we already know that we need to do a full typescript rebuild
-    return Object.keys(ctx.moduleFiles);
-  }
-
-  // this is a rebuild, narrow down the files that we already know changed
-  // go through the list of changed files and only pick out
-  // the files that are typescript files, to include d.ts files
-  // this speeds up transpile times by only worrying about changed files
-  return Object.keys(ctx.moduleFiles).filter(tsFilePath => {
-    return isTsFile(tsFilePath) || isDtsFile(tsFilePath);
-  });
 }
 
 

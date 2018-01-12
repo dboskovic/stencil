@@ -1,9 +1,9 @@
 import { addAutoGenerate } from './auto-docs';
 import { AUTO_GENERATE_COMMENT } from './constants';
-import { BuildConfig, BuildContext, ModuleFile } from '../../util/interfaces';
+import { Config, CompilerCtx, ModuleFile } from '../../util/interfaces';
 
 
-export function generateReadmes(config: BuildConfig, ctx: BuildContext): Promise<any> {
+export function generateReadmes(config: Config, ctx: CompilerCtx): Promise<any> {
   if (!config.generateDocs) {
     return Promise.resolve();
   }
@@ -40,7 +40,7 @@ export function generateReadmes(config: BuildConfig, ctx: BuildContext): Promise
 }
 
 
-async function genereateReadme(config: BuildConfig, ctx: BuildContext, moduleFile: ModuleFile, dirPath: string) {
+async function genereateReadme(config: Config, ctx: CompilerCtx, moduleFile: ModuleFile, dirPath: string) {
   const readMePath = config.sys.path.join(dirPath, 'readme.md');
 
   try {
@@ -55,7 +55,7 @@ async function genereateReadme(config: BuildConfig, ctx: BuildContext, moduleFil
 }
 
 
-async function createReadme(config: BuildConfig, ctx: BuildContext, moduleFile: ModuleFile, readMePath: string) {
+async function createReadme(config: Config, ctx: CompilerCtx, moduleFile: ModuleFile, readMePath: string) {
   let content: string[] = [];
 
   content.push(`# ${moduleFile.cmpMeta.tagNameMeta}`);
@@ -69,7 +69,7 @@ async function createReadme(config: BuildConfig, ctx: BuildContext, moduleFile: 
 }
 
 
-async function updateReadme(config: BuildConfig, ctx: BuildContext, moduleFile: ModuleFile, readMePath: string, existingContent: string) {
+async function updateReadme(config: Config, ctx: CompilerCtx, moduleFile: ModuleFile, readMePath: string, existingContent: string) {
   const content: string[] = [];
 
   const existingLines = existingContent.split(/(\r?\n)/);

@@ -121,6 +121,28 @@ export class NodeFileSystem implements InMemoryFileSystem {
     }
   }
 
+  /**
+   * Returns true if it's already cached
+   * and false if it was not cached yet
+   */
+  async isCachedReadFile(filePath: string) {
+    filePath = normalizePath(filePath);
+    let f = this.d[filePath];
+    if (f && f.exists && typeof f.fileContent === 'string') {
+      return true;
+    }
+
+    const fileContent = await this.disk.readFile(filePath, 'utf-8');
+
+    f = this.d[filePath] = this.d[filePath] || {};
+    f.exists = true;
+    f.isFile = true;
+    f.isDirectory = false;
+    f.fileContent = fileContent;
+
+    return false;
+  }
+
   async readdir(dirPath: string) {
     dirPath = normalizePath(dirPath);
     const dirItems = await this.disk.readdir(dirPath);
@@ -145,15 +167,15 @@ export class NodeFileSystem implements InMemoryFileSystem {
       return f.fileContent;
     }
 
-    return this.disk.readFile(filePath, 'utf-8').then((fileContent: string) => {
-      f = this.d[filePath] = this.d[filePath] || {};
-      f.exists = true;
-      f.isFile = true;
-      f.isDirectory = false;
-      f.fileContent = fileContent;
+    const fileContent = await this.disk.readFile(filePath, 'utf-8');
 
-      return fileContent;
-    });
+    f = this.d[filePath] = this.d[filePath] || {};
+    f.exists = true;
+    f.isFile = true;
+    f.isDirectory = false;
+    f.fileContent = fileContent;
+
+    return fileContent;
   }
 
   readFileSync(filePath: string) {

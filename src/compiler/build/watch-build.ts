@@ -1,107 +1,56 @@
 import { build } from './build';
-import { BuildConfig, BuildContext, BuildResults } from '../../util/interfaces';
-import { isCssFile, isHtmlFile, isSassFile, isTsFile } from '../util';
+import { BuildResults, Config, CompilerCtx, WatcherResults } from '../../util/interfaces';
 
 
-export function watchBuild(config: BuildConfig, ctx: BuildContext, requiresFullBuild: boolean, changedFiles: string[]): Promise<BuildResults> {
-  // always reset to do a full build
-  ctx.isRebuild = true;
-  ctx.isChangeBuild = false;
-  ctx.changeHasComponentModules = true;
-  ctx.changeHasNonComponentModules = true;
-  ctx.changeHasSass = true;
-  ctx.changeHasCss = true;
-  ctx.changedFiles = changedFiles;
-  ctx.requiresFullTypescriptRebuild = requiresFullBuild;
+export function watchBuild(config: Config, ctx: CompilerCtx, watcher: WatcherResults): Promise<BuildResults> {
+  // print out a pretty message about the changed files
+  printWatcherMessage(config, watcher);
 
-  if (!ctx.lastBuildHadError && !requiresFullBuild && changedFiles.length) {
-    let changeHasComponentModules = false;
-    let changeHasNonComponentModules = false;
-    ctx.changeHasSass = false;
-    ctx.changeHasCss = false;
+  // kick off the rebuild
+  return build(config, ctx, watcher);
+}
 
-    changedFiles.forEach(changedFile => {
 
-      if (isTsFile(changedFile)) {
-        // we know there's a module change
-        const moduleFile = ctx.moduleFiles[changedFile];
-        if (moduleFile && moduleFile.cmpMeta) {
-          // we've got a module file already in memory and
-          // the changed file we already know is a component file
-          changeHasComponentModules = true;
+function printWatcherMessage(config: Config, watcherResults: WatcherResults) {
+  const changedFiles = watcherResults.filesChanged;
 
-        } else {
-          // not in cache, so let's consider it a module change
-          changeHasNonComponentModules = true;
-        }
-
-      } else if (isSassFile(changedFile)) {
-        ctx.changeHasSass = true;
-
-      } else if (isCssFile(changedFile)) {
-        ctx.changeHasCss = true;
-
-      } else if (isHtmlFile(changedFile)) {
-        ctx.changeHasHtml = true;
-      }
-    });
-
-    // if nothing is true then something is up
-    // so let's do a full build if "isChangeBuild" ends up being false
-    ctx.isChangeBuild = (changeHasComponentModules || changeHasNonComponentModules || ctx.changeHasSass || ctx.changeHasCss || ctx.changeHasHtml);
-
-    if (ctx.isChangeBuild) {
-      if (changeHasNonComponentModules && !changeHasComponentModules) {
-        // there are module changes, but the changed modules
-        // aren't components, when in doubt do a full rebuild
-        ctx.changeHasNonComponentModules = true;
-        ctx.changeHasComponentModules = false;
-
-      } else if (!changeHasNonComponentModules && changeHasComponentModules) {
-        // only modudle changes are ones that are components
-        ctx.changeHasNonComponentModules = false;
-        ctx.changeHasComponentModules = true;
-
-      } else if (!changeHasNonComponentModules && !changeHasComponentModules) {
-        // no modules were changed at all
-        ctx.changeHasComponentModules = false;
-        ctx.changeHasNonComponentModules = false;
-      }
-    }
-  }
-
-  if (!ctx.isChangeBuild) {
-    // completely clear out the cache
-    ctx.moduleBundleOutputs = {};
-    ctx.moduleBundleLegacyOutputs = {};
-  }
-
-  changedFiles.sort();
   const totalChangedFiles = changedFiles.length;
+  let msg: string = null;
 
   if (totalChangedFiles > 6) {
     const trimmedChangedFiles = changedFiles.slice(0, 5);
     const otherFilesTotal = totalChangedFiles - trimmedChangedFiles.length;
-    let msg = `changed files: ${trimmedChangedFiles.map(f => config.sys.path.basename(f)).join(', ')}`;
+    msg = `changed files: ${trimmedChangedFiles.map(f => config.sys.path.basename(f)).join(', ')}`;
     if (otherFilesTotal > 0) {
       msg += `, +${otherFilesTotal} other${otherFilesTotal > 1 ? 's' : ''}`;
     }
-    config.logger.info(msg);
 
   } else if (totalChangedFiles > 1) {
-    const msg = `changed files: ${changedFiles.map(f => config.sys.path.basename(f)).join(', ')}`;
-    config.logger.info(msg);
+    msg = `changed files: ${changedFiles.map(f => config.sys.path.basename(f)).join(', ')}`;
 
   } else if (totalChangedFiles > 0) {
-    const msg = `changed file: ${changedFiles.map(f => config.sys.path.basename(f)).join(', ')}`;
-    config.logger.info(msg);
+    msg = `changed file: ${changedFiles.map(f => config.sys.path.basename(f)).join(', ')}`;
+
+  } else if (watcherResults.dirsAdded.length > 1) {
+    msg = `added directories: ${watcherResults.dirsAdded.map(f => config.sys.path.basename(f)).join(', ')}`;
+
+  } else if (watcherResults.dirsAdded.length > 0) {
+    msg = `added directory: ${watcherResults.dirsAdded.map(f => config.sys.path.basename(f)).join(', ')}`;
+
+  } else if (watcherResults.dirsDeleted.length > 1) {
+    msg = `deleted directories: ${watcherResults.dirsAdded.map(f => config.sys.path.basename(f)).join(', ')}`;
+
+  } else if (watcherResults.dirsDeleted.length > 0) {
+    msg = `deleted directory: ${watcherResults.dirsAdded.map(f => config.sys.path.basename(f)).join(', ')}`;
   }
 
-  return build(config, ctx);
+  if (msg != null) {
+    config.logger.info(config.logger.cyan(msg));
+  }
 }
 
 
-export function watchConfigFileReload(config: BuildConfig) {
+export function watchConfigFileReload(config: Config) {
   config.logger.debug(`reload config file: ${config.configPath}`);
 
   try {

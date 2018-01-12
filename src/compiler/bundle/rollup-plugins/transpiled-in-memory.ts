@@ -1,7 +1,7 @@
-import { BuildConfig, BuildContext, FilesMap } from '../../../util/interfaces';
+import { Config, CompilerCtx, FilesMap } from '../../../util/interfaces';
 import { normalizePath } from '../../util';
 
-export default function transpiledInMemoryPlugin(config: BuildConfig, ctx: BuildContext) {
+export default function transpiledInMemoryPlugin(config: Config, ctx: CompilerCtx) {
   const sys = config.sys;
   const assetsCache: FilesMap = {};
 

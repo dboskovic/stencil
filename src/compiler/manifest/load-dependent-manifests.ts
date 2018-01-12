@@ -1,9 +1,9 @@
-import { BuildConfig, BuildContext, ManifestBundle, DependentCollection, Manifest } from '../../util/interfaces';
+import { Config, CompilerCtx, ManifestBundle, DependentCollection, Manifest } from '../../util/interfaces';
 import { normalizePath } from '../util';
 import { parseDependentManifest } from './manifest-data';
 
 
-export function loadDependentManifests(config: BuildConfig, ctx: BuildContext) {
+export function loadDependentManifests(config: Config, ctx: CompilerCtx) {
   // load up all of the collections which this app is dependent on
   return Promise.all(config.collections.map(configCollection => {
     return loadDependentManifest(config, ctx, configCollection);
@@ -11,7 +11,7 @@ export function loadDependentManifests(config: BuildConfig, ctx: BuildContext) {
 }
 
 
-async function loadDependentManifest(config: BuildConfig, ctx: BuildContext, dependentCollection: DependentCollection) {
+async function loadDependentManifest(config: Config, ctx: CompilerCtx, dependentCollection: DependentCollection) {
 
   if (ctx.dependentManifests[dependentCollection.name]) {
     // we've already cached the manifest, no need for another resolve/readFile/parse

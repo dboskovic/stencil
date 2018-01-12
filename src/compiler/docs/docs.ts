@@ -1,23 +1,21 @@
-import { BuildConfig, BuildContext } from '../../util/interfaces';
-import { catchError, getBuildContext, hasError, resetBuildContext } from '../util';
+import { Config, CompilerCtx } from '../../util/interfaces';
+import { catchError, getCompilerContext, hasError } from '../util';
 import { cleanDiagnostics } from '../../util/logger/logger-util';
 import { generateReadmes } from './generate-readmes';
-import { generateHtmlDiagnostics } from '../../util/logger/generate-html-diagnostics';
-import { isConfigValid } from '../build/build';
+import { isConfigValid, getBuildContext } from '../build/build';
 import { transpileScanSrc } from '../transpile/transpile-scan-src';
 
 
-export async function docs(config: BuildConfig, ctx: BuildContext) {
-  ctx = getBuildContext(config.sys, ctx);
-  resetBuildContext(ctx);
+export async function docs(config: Config, compilerCtx: CompilerCtx) {
+  compilerCtx = getCompilerContext(config.sys, compilerCtx);
+  const buildCtx = getBuildContext(config, compilerCtx, null);
 
   config.logger.info(config.logger.cyan(`${config.sys.compiler.name} v${config.sys.compiler.version}`));
 
   // validate the build config
-  if (!isConfigValid(config, ctx, ctx.diagnostics)) {
+  if (!isConfigValid(config, buildCtx)) {
     // invalid build config, let's not continue
-    config.logger.printDiagnostics(ctx.diagnostics);
-    generateHtmlDiagnostics(config, ctx.diagnostics);
+    config.logger.printDiagnostics(buildCtx.diagnostics);
     return;
   }
 
@@ -28,26 +26,25 @@ export async function docs(config: BuildConfig, ctx: BuildContext) {
     // begin the build
     // async scan the src directory for ts files
     // then transpile them all in one go
-    await transpileScanSrc(config, ctx);
+    await transpileScanSrc(config, compilerCtx, buildCtx);
 
     // generate each of the readmes
-    await generateReadmes(config, ctx);
+    await generateReadmes(config, compilerCtx);
 
   } catch (e) {
     // catch all phase
-    catchError(ctx.diagnostics, e);
+    catchError(buildCtx.diagnostics, e);
   }
 
   // finalize phase
-  ctx.diagnostics = cleanDiagnostics(ctx.diagnostics);
-  config.logger.printDiagnostics(ctx.diagnostics);
-  generateHtmlDiagnostics(config, ctx.diagnostics);
+  buildCtx.diagnostics = cleanDiagnostics(buildCtx.diagnostics);
+  config.logger.printDiagnostics(buildCtx.diagnostics);
 
   // create a nice pretty message stating what happend
   let buildStatus = 'finished';
   let statusColor = 'green';
 
-  if (hasError(ctx.diagnostics)) {
+  if (hasError(buildCtx.diagnostics)) {
     buildStatus = 'failed';
     statusColor = 'red';
   }

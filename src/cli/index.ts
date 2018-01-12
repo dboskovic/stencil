@@ -1,4 +1,4 @@
-import { BuildConfig, BuildResults, Logger, StencilSystem } from '../util/interfaces';
+import { BuildResults, Config, Logger, StencilSystem } from '../util/interfaces';
 import { getConfigFilePath, hasError, overrideConfigFromArgv, parseArgv } from './cli-utils';
 import { help } from './task-help';
 import { initApp } from './task-init';
@@ -26,7 +26,7 @@ export async function run(process: NodeJS.Process, sys: StencilSystem, logger: L
   }
 
   // load the config file
-  let config: BuildConfig;
+  let config: Config;
   try {
     const configPath = getConfigFilePath(process, sys, argv.config);
     config = sys.loadConfigFile(configPath);

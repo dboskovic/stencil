@@ -302,7 +302,7 @@ export interface BuildConditionals {
 export type SourceTarget = 'es5' | 'es2015';
 
 
-export interface BuildConfig {
+export interface Config {
   configPath?: string;
   sys?: StencilSystem;
   logger?: Logger;
@@ -469,24 +469,8 @@ export interface HydrateOptions extends RenderOptions {
 }
 
 
-export interface BuildResults {
-  stats?: {
-    isRebuid: boolean;
-    buildCount: number;
-    files: string[];
-    components: string[];
-    changedFiles: string[];
-    bundleBuildCount: number;
-    transpileBuildCount: number;
-    sassBuildCount: number;
-  };
-  diagnostics: Diagnostic[];
-  duration: number;
-  hasErrors: boolean;
-}
-
-
-export interface BuildContext {
+export interface CompilerCtx {
+  activeBuildId?: number;
   fs?: InMemoryFileSystem;
   events?: BuildEvents;
   moduleFiles?: ModuleFiles;
@@ -508,30 +492,56 @@ export interface BuildContext {
   };
   appCoreWWWPath?: string;
   coreBuilds?: {[cacheKey: string]: string};
-  hasIndexHtml?: boolean;
 
-  isRebuild?: boolean;
-  isChangeBuild?: boolean;
   lastBuildHadError?: boolean;
-  changeHasNonComponentModules?: boolean;
-  changeHasComponentModules?: boolean;
-  changeHasSass?: boolean;
-  changeHasCss?: boolean;
-  changeHasHtml?: boolean;
-  changedFiles?: string[];
-  requiresFullTypescriptRebuild?: boolean;
-
-  buildCount?: number;
-  sassBuildCount?: number;
-  transpileBuildCount?: number;
-  indexBuildCount?: number;
-  appFileBuildCount?: number;
-
-  bundleBuildCount?: number;
   localPrerenderServer?: any;
+}
 
-  diagnostics?: Diagnostic[];
-  manifest?: Manifest;
+
+export interface BuildCtx {
+  buildId: number;
+  diagnostics: Diagnostic[];
+  manifest: Manifest;
+  transpileBuildCount: number;
+  styleBuildCount: number;
+  bundleBuildCount: number;
+  appFileBuildCount: number;
+  indexBuildCount: number;
+  isRebuild: boolean;
+  watcher: WatcherResults;
+  filesWritten: string[];
+  components: string[];
+  aborted: boolean;
+  timeSpan: LoggerTimeSpan;
+  startTime: number;
+}
+
+
+export interface BuildResults {
+  buildId: number;
+  diagnostics: Diagnostic[];
+  duration: number;
+  hasError: boolean;
+  aborted?: boolean;
+  stats?: {
+    isRebuild: boolean;
+    filesWritten: string[];
+    components: string[];
+    transpileBuildCount: number;
+    styleBuildCount: number;
+    bundleBuildCount: number;
+  };
+}
+
+
+export interface WatcherResults {
+  dirsAdded: string[];
+  dirsDeleted: string[];
+  filesChanged: string[];
+  filesUpdated: string[];
+  filesAdded: string[];
+  filesDeleted: string[];
+  configUpdated: boolean;
 }
 
 
@@ -579,7 +589,7 @@ export interface Logger {
 
 
 export interface LoggerTimeSpan {
-  finish(finishedMsg: string, color?: string, bold?: boolean, newLineSuffix?: boolean): number;
+  finish(finishedMsg: string, color?: string, bold?: boolean, newLineSuffix?: boolean): void;
 }
 
 
@@ -1155,7 +1165,7 @@ export interface StencilSystem {
     nodir?: boolean;
   }): Promise<string[]>;
   isGlob?(str: string): boolean;
-  loadConfigFile?(configPath: string): BuildConfig;
+  loadConfigFile?(configPath: string): Config;
   minifyCss?(input: string, opts?: any): {
     output: string;
     sourceMap?: any;
@@ -1210,7 +1220,7 @@ export interface StencilSystem {
     resolve(from: string, to: string): string;
   };
   vm?: {
-    createContext(ctx: BuildContext, wwwDir: string, sandbox?: any): any;
+    createContext(ctx: CompilerCtx, wwwDir: string, sandbox?: any): any;
     runInContext(code: string, contextifiedSandbox: any, options?: any): any;
   };
   workbox?: Workbox;
@@ -1225,6 +1235,7 @@ export interface InMemoryFileSystem extends FileSystem {
   clearDirCache(dirPath: string): void;
   clearFileCache(filePath: string): void;
   disk: FileSystem;
+  isCachedReadFile(filePath: string): Promise<boolean>;
 }
 
 
@@ -1502,4 +1513,4 @@ export interface ComponentDidUnload {
   componentDidUnload: () => void;
 }
 
-export type CompilerEventName = 'fileChange' | 'fileAdd' | 'fileDelete' | 'dirAdd' | 'dirDelete' | 'build' | 'rebuild';
+export type CompilerEventName = 'fileUpdate' | 'fileAdd' | 'fileDelete' | 'dirAdd' | 'dirDelete' | 'build' | 'rebuild';

@@ -1,4 +1,4 @@
-import { BuildConfig, ComponentMeta, ModuleFiles } from '../../../util/interfaces';
+import { Config, ComponentMeta, ModuleFiles } from '../../../util/interfaces';
 import { convertValueToLiteral, getImportNameMapFromStyleMeta, StyleImport } from './util';
 import { DEFAULT_STYLE_MODE, ENCAPSULATION } from '../../../util/constants';
 import { getStylePlaceholder, getStyleIdPlaceholder } from '../../../util/data-serialize';
@@ -6,7 +6,7 @@ import { formatComponentConstructorEvents, formatComponentConstructorProperties 
 import * as ts from 'typescript';
 
 
-export default function addComponentMetadata(config: BuildConfig, moduleFiles: ModuleFiles): ts.TransformerFactory<ts.SourceFile> {
+export default function addComponentMetadata(config: Config, moduleFiles: ModuleFiles): ts.TransformerFactory<ts.SourceFile> {
 
   return (transformContext) => {
 
@@ -50,7 +50,7 @@ export default function addComponentMetadata(config: BuildConfig, moduleFiles: M
 }
 
 
-export function addStaticMeta(config: BuildConfig, cmpMeta: ComponentMeta) {
+export function addStaticMeta(config: Config, cmpMeta: ComponentMeta) {
   const staticMembers: ConstructorComponentMeta = {};
 
   staticMembers.is = convertValueToLiteral(cmpMeta.tagNameMeta);
