@@ -216,7 +216,6 @@ export interface ManifestCompiler {
 
 
 export interface ModuleFile {
-  tsFilePath?: string;
   dtsFilePath?: string;
   jsFilePath?: string;
   cmpMeta?: ComponentMeta;

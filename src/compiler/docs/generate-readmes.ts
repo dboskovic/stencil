@@ -21,7 +21,7 @@ export function generateReadmes(config: Config, ctx: CompilerCtx): Promise<any> 
       return;
     }
 
-    const dirPath = config.sys.path.dirname(moduleFile.tsFilePath);
+    const dirPath = config.sys.path.dirname(filePath);
 
     if (cmpDirectories.includes(dirPath)) {
       if (!warnings.includes(dirPath)) {

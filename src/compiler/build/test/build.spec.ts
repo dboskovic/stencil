@@ -28,7 +28,7 @@ describe('build', () => {
     c.fs.writeFileSync('/src/cmp-a.tsx', `@Component({ tag: 'cmp-a' }) export class CmpA {}`);
 
     const r = await c.build();
-    expect(r.diagnostics.length).toBe(0);
+    expect(r.diagnostics).toEqual([]);
     expect(r.stats.components.length).toBe(1);
     // expect(r.stats.transpileBuildCount).toBe(1);
     // expect(r.stats.styleBuildCount).toBe(0);

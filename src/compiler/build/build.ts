@@ -114,8 +114,11 @@ export function getBuildContext(config: Config, compilerCtx: CompilerCtx, watche
 
   const msg = `${isRebuild ? 'rebuild' : 'build'}, ${config.fsNamespace}, ${config.devMode ? 'dev' : 'prod'} mode, started`;
 
+  // increment the active build id
+  compilerCtx.activeBuildId++;
+
   const buildCtx: BuildCtx = {
-    buildId: compilerCtx.activeBuildId++,
+    buildId: compilerCtx.activeBuildId,
     diagnostics: [],
     manifest: {},
     transpileBuildCount: 0,

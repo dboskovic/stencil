@@ -1,6 +1,6 @@
 import addComponentMetadata from './transformers/add-component-metadata';
 import { Config, CompilerCtx, Diagnostic, ModuleFiles, TranspileResults, BuildCtx } from '../../util/interfaces';
-import { hasError, pathJoin } from '../util';
+import { hasError, pathJoin, normalizePath } from '../util';
 import { COMPONENTS_DTS } from '../build/distribution';
 import { gatherMetadata } from './datacollection/index';
 import { generateComponentTypesFile } from './create-component-types';
@@ -97,32 +97,32 @@ export function transpileModules(config: Config, compilerCtx: CompilerCtx, build
   const tsHost = getTsHost(config, compilerCtx, tsOptions);
 
   // fire up the typescript program
-  const componentsFilePath = pathJoin(config, config.srcDir, COMPONENTS_DTS);
-  const checkProgram = ts.createProgram(tsFilePaths.filter(filePath => filePath !== componentsFilePath), tsOptions, tsHost);
+  const componentsDtsFilePath = pathJoin(config, config.srcDir, COMPONENTS_DTS);
+  const checkProgram = ts.createProgram(tsFilePaths.filter(filePath => filePath !== componentsDtsFilePath), tsOptions, tsHost);
 
   // Gather component metadata and type info
   const metadata = gatherMetadata(config, checkProgram.getTypeChecker(), checkProgram.getSourceFiles());
 
-  Object.keys(metadata).forEach(tsFilePath => {
+  Object.keys(metadata).forEach(key => {
+    const tsFilePath = normalizePath(key);
     const fileMetadata = metadata[tsFilePath];
     // normalize metadata
     fileMetadata.stylesMeta = normalizeStyles(config, tsFilePath, fileMetadata.stylesMeta);
     fileMetadata.assetsDirsMeta = normalizeAssetsDir(config, tsFilePath, fileMetadata.assetsDirsMeta);
 
     // assign metadata to module files
-    const moduleFile = compilerCtx.moduleFiles[tsFilePath];
-    if (moduleFile) {
-      moduleFile.cmpMeta = fileMetadata;
+    if (!compilerCtx.moduleFiles[tsFilePath]) {
+      compilerCtx.moduleFiles[tsFilePath] = {};
     }
+    compilerCtx.moduleFiles[tsFilePath].cmpMeta = fileMetadata;
   });
 
   // Generate d.ts files for component types
   const componentTypesFileContent = generateComponentTypesFile(config, metadata);
-  compilerCtx.fs.writeFileSync(componentsFilePath, componentTypesFileContent);
+  compilerCtx.fs.writeFileSync(componentsDtsFilePath, componentTypesFileContent);
 
   // create or reuse a module file file object
-  compilerCtx.moduleFiles[componentsFilePath] = compilerCtx.moduleFiles[componentsFilePath] || {};
-  compilerCtx.moduleFiles[componentsFilePath].tsFilePath = componentsFilePath;
+  compilerCtx.moduleFiles[componentsDtsFilePath] = compilerCtx.moduleFiles[componentsDtsFilePath] || {};
 
   // keep track of how many files we transpiled (great for debugging/testing)
   buildCtx.transpileBuildCount = tsFilePaths.length;

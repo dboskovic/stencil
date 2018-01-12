@@ -58,22 +58,19 @@ function writeFileInMemory(config: Config, ctx: CompilerCtx, sourceFile: ts.Sour
   ctx.fs.writeFile(outputFilePath, outputText, isInMemoryOnly);
 
   // get or create the ctx module file object
-  let moduleFile = ctx.moduleFiles[tsFilePath];
-  if (!moduleFile) {
+  if (!ctx.moduleFiles[tsFilePath]) {
     // we don't have this module in the ctx yet
-    moduleFile = ctx.moduleFiles[tsFilePath] = {
-      tsFilePath: tsFilePath
-    };
+    ctx.moduleFiles[tsFilePath] = {};
   }
 
   // figure out which file type this is
   if (isJsFile(outputFilePath)) {
     // transpiled file is a js file
-    moduleFile.jsFilePath = outputFilePath;
+    ctx.moduleFiles[tsFilePath].jsFilePath = outputFilePath;
 
   } else if (isDtsFile(outputFilePath)) {
     // transpiled file is a .d.ts file
-    moduleFile.dtsFilePath = outputFilePath;
+    ctx.moduleFiles[tsFilePath].dtsFilePath = outputFilePath;
 
   } else {
     // idk, this shouldn't happen

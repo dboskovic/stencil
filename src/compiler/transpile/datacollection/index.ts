@@ -7,6 +7,7 @@ import { getMethodDecoratorMeta } from './method-decorator';
 import { getPropDecoratorMeta } from './prop-decorator';
 import { getStateDecoratorMeta } from './state-decorator';
 import { getWatchDecoratorMeta } from './watch-decorator';
+import { normalizePath } from '../../util';
 import { validateComponentClass } from './validate-component';
 import * as ts from 'typescript';
 
@@ -32,7 +33,8 @@ function visitFactory(config: Config, checker: ts.TypeChecker, componentMetaList
     if (ts.isClassDeclaration(node)) {
       const cmpMeta = visitClass(config, checker, node as ts.ClassDeclaration, sourceFile, diagnostics);
       if (cmpMeta) {
-        componentMetaList[sourceFile.getSourceFile().fileName] = cmpMeta;
+        const tsFilePath = normalizePath(sourceFile.getSourceFile().fileName);
+        componentMetaList[tsFilePath] = cmpMeta;
       }
     }
     ts.forEachChild(node, (node) => {

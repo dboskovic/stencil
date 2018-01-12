@@ -20,6 +20,8 @@ export function getCompilerCtx(sys: StencilSystem, compilerCtx: CompilerCtx = {}
     compilerCtx.activeBuildId = 0;
   }
 
+  compilerCtx.lastBuildHadError = false;
+
   return compilerCtx;
 }
 
