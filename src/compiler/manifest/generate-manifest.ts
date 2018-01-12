@@ -1,5 +1,5 @@
 import { Config, CompilerCtx, Manifest, ModuleFiles, BuildCtx } from '../../util/interfaces';
-import { catchError, hasError } from '../util';
+import { catchError } from '../util';
 import { loadDependentManifests } from './load-dependent-manifests';
 import { mergeDependentManifests } from './merge-manifests';
 
@@ -19,10 +19,6 @@ export async function generateAppManifest(config: Config, compilerCtx: CompilerC
         typescriptVersion: config.sys.compiler.typescriptVersion
       }
     };
-
-    if (hasError(buildCtx.diagnostics)) {
-      return;
-    }
 
     // add the app's compiled components to the manifest
     addAppBundles(config, buildCtx.manifest);

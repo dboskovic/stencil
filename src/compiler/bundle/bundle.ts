@@ -1,5 +1,5 @@
 import { BuildCtx, Bundle, CompilerCtx, ComponentMeta, Config, Diagnostic, ManifestBundle, ModuleFile } from '../../util/interfaces';
-import { buildError, catchError, hasError } from '../util';
+import { buildError, catchError } from '../util';
 import { bundleModules } from './bundle-modules';
 import { bundleStyles } from './bundle-styles';
 import { DEFAULT_STYLE_MODE, ENCAPSULATION } from '../../util/constants';
@@ -9,10 +9,6 @@ import { requiresScopedStyles } from './component-styles';
 
 export async function bundle(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
   let bundles: Bundle[] = [];
-
-  if (hasError(buildCtx.diagnostics)) {
-    return bundles;
-  }
 
   if (config.generateWWW) {
     config.logger.debug(`bundle, buildDir: ${config.buildDir}`);

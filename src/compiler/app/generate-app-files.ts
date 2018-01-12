@@ -6,15 +6,11 @@ import { generateEs5DisabledMessage } from './app-es5-disabled';
 import { generateGlobalStyles } from './app-global-styles';
 import { generateLoader } from './app-loader';
 import { getAppWWWBuildDir } from './app-file-naming';
-import { hasError, pathJoin } from '../util';
+import { pathJoin } from '../util';
 import { setBuildConditionals } from './build-conditionals';
 
 
 export async function generateAppFiles(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx, bundles: Bundle[], cmpRegistry: ComponentRegistry) {
-  if (hasError(buildCtx.diagnostics)) {
-    return;
-  }
-
   const timespan = config.logger.createTimeSpan(`generateAppFiles: ${config.namespace} start`, true);
 
   // generate the shared app registry object

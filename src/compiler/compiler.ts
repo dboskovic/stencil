@@ -1,17 +1,14 @@
 import { Config, CompilerCtx, BuildResults, InMemoryFileSystem } from '../util/interfaces';
 import { build } from './build/build';
 import { docs } from './docs/docs';
-import { BuildEvents } from './events';
+import { getCompilerCtx } from './util';
 
 
 export class Compiler {
   private ctx: CompilerCtx;
 
   constructor(public config: Config) {
-    this.ctx = {
-      events: new BuildEvents(),
-      fs: config.sys.createFileSystem()
-    };
+    this.ctx = getCompilerCtx(config.sys);
   }
 
   build() {

@@ -75,9 +75,6 @@ function writeFileInMemory(config: Config, ctx: CompilerCtx, sourceFile: ts.Sour
     // transpiled file is a .d.ts file
     moduleFile.dtsFilePath = outputFilePath;
 
-    // let's write this to disk (eventually)
-    ctx.fs.writeFile(outputFilePath, outputText);
-
   } else {
     // idk, this shouldn't happen
     config.logger.debug(`unknown transpiled output: ${outputFilePath}`);

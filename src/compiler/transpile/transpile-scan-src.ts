@@ -1,14 +1,9 @@
 import { BuildCtx, CompilerCtx, Config, InMemoryFileSystem } from '../../util/interfaces';
-import { catchError, hasError, pathJoin, isTsFile } from '../util';
+import { catchError, isTsFile, pathJoin } from '../util';
 import { transpileModules } from '../transpile/transpile';
 
 
 export async function transpileScanSrc(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
-  if (hasError(buildCtx.diagnostics)) {
-    // we've already got an error, let's not continue
-    return;
-  }
-
   if (canSkipTranspile(buildCtx)) {
     // this is a rebuild, but turns out the files causing to
     // do not require us to run the transpiling again
@@ -53,7 +48,7 @@ function scanDir(config: Config, fs: InMemoryFileSystem, changedTsFilePaths: str
       const itemPath = pathJoin(config, dir, dirItem);
 
       // get the fs stats for the item, could be either a file or directory
-      return fs.stat(itemPath).then(s => {
+      return fs.stat(itemPath).then(async s => {
         if (s.isDirectory()) {
           // looks like it's yet another directory
           // let's keep drilling down
@@ -65,7 +60,7 @@ function scanDir(config: Config, fs: InMemoryFileSystem, changedTsFilePaths: str
           // let's async read and cache the source file so it get's loaded up
           // into our in-memory file system to be used later during
           // the actual transpile
-          const isCachedFile = fs.isCachedReadFile(itemPath);
+          const isCachedFile = await fs.isCachedReadFile(itemPath);
           if (!isCachedFile) {
             // this file wasn't already in the cache so let's put
             // it into our list of changed ts file paths

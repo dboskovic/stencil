@@ -41,7 +41,6 @@ export async function build(config: Config, compilerCtx?: CompilerCtx, watcher?:
     return finishBuild(config, compilerCtx, buildCtx);
   }
 
-
   try {
     // begin the build
     // async scan the src directory for ts files

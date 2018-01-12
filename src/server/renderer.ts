@@ -9,9 +9,8 @@ import { validateBuildConfig } from '../util/validate-config';
 export class Renderer {
   private ctx: CompilerCtx;
   private cmpRegistry: ComponentRegistry;
-  config: Config;
 
-  constructor(config: Config, ctx?: CompilerCtx) {
+  constructor(public config: Config, ctx: CompilerCtx) {
     this.config = config;
     validateBuildConfig(config);
 

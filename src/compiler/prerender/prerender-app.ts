@@ -6,12 +6,6 @@ import { crawlAnchorsForNextUrls, getPrerenderQueue } from './prerender-utils';
 
 
 export async function prerenderApp(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx, bundles: Bundle[]) {
-  if (hasError(buildCtx.diagnostics)) {
-    // no need to rebuild index.html if there were no app file changes
-    config.logger.debug(`prerenderApp, skipping because build has errors`);
-    return [];
-  }
-
   if (!config.prerender) {
     // no need to rebuild index.html if there were no app file changes
     config.logger.debug(`prerenderApp, skipping because config.prerender is falsy`);
