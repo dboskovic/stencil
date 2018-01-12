@@ -6,6 +6,27 @@ import * as path from 'path';
 
 describe('validation', () => {
 
+  describe('buildStats', () => {
+
+    it('set buildStats true', () => {
+      config.buildStats = true;
+      validateBuildConfig(config);
+      expect(config.buildStats).toBe(true);
+    });
+
+    it('set buildStats false', () => {
+      config.buildStats = false;
+      validateBuildConfig(config);
+      expect(config.buildStats).toBe(false);
+    });
+
+    it('default buildStats false', () => {
+      validateBuildConfig(config);
+      expect(config.buildStats).toBe(false);
+    });
+
+  });
+
   describe('es5 build', () => {
 
     it('set buildEs5 false', () => {

@@ -1,8 +1,8 @@
 import { Config, CompilerCtx, BuildResults } from '../../../util/interfaces';
-import { mockConfig, mockFs } from '../../../testing/mocks';
-import { validateBuildConfig } from '../../../util/validate-config';
 import { Compiler } from '../../compiler';
-import * as path from 'path';
+import { mockConfig, mockFs } from '../../../testing/mocks';
+import { normalizePath } from '../../util';
+import { validateBuildConfig } from '../../../util/validate-config';
 
 
 describe('rebuild', () => {
@@ -416,17 +416,14 @@ describe('rebuild', () => {
     // get the rebuild results
     const rebuildResults = await rebuildListener;
 
-    console.log(rebuildResults)
     expect(rebuildResults.diagnostics).toEqual([]);
     expect(rebuildResults.buildId).toBe(1);
     expect(rebuildResults.stats.isRebuild).toBe(true);
     expect(rebuildResults.stats.transpileBuildCount).toBe(2);
-    // expect(rebuildResults.stats.bundleBuildCount).toBe(1);
-    // expect(rebuildResults.stats.styleBuildCount).toBe(1);
-    // expect(rebuildResults.stats.filesWritten[0]).toBe(0);
+    expect(rebuildResults.stats.bundleBuildCount).toBe(1);
+    expect(rebuildResults.stats.styleBuildCount).toBe(1);
 
-    expect(wroteFile(rebuildResults, '/src/cmp-a.tsx')).toBe(true);
-    // expect(wroteFile(rebuildResults, '/src/components.d.ts')).toBe(true);
+    expect(wroteFile(rebuildResults, '/www/build/app/cmp-a.js')).toBe(true);
   });
 
 
@@ -440,9 +437,8 @@ describe('rebuild', () => {
 
 
   function wroteFile(r: BuildResults, p: string) {
-    const filename = path.basename(p);
     return r.stats.filesWritten.some(f => {
-      return path.basename(f) === filename;
+      return normalizePath(f) === normalizePath(p);
     });
   }
 

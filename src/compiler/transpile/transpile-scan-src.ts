@@ -4,7 +4,6 @@ import { transpileModules } from '../transpile/transpile';
 
 
 export async function transpileScanSrc(config: Config, compilerCtx: CompilerCtx, buildCtx: BuildCtx) {
-  console.log('is rebuild transpileScanSrc', buildCtx.isRebuild)
   if (canSkipTranspile(buildCtx)) {
     // this is a rebuild, but turns out the files causing to
     // do not require us to run the transpiling again

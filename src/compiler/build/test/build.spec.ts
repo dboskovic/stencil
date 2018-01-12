@@ -2,8 +2,8 @@ import { build } from '../build';
 import { Config, CompilerCtx, BuildResults, ComponentRegistry } from '../../../util/interfaces';
 import { Compiler } from '../../compiler';
 import { mockConfig, mockFs } from '../../../testing/mocks';
+import { normalizePath } from '../../util';
 import { validateBuildConfig } from '../../../util/validate-config';
-import * as path from 'path';
 
 
 describe('build', () => {
@@ -20,7 +20,14 @@ describe('build', () => {
     expect(r.stats.styleBuildCount).toBe(1);
     expect(r.stats.bundleBuildCount).toBe(1);
 
-    expect(wroteFile(r, 'cmp-a.js')).toBe(true);
+    expect(r.stats.filesWritten.length).toBe(7);
+    expect(wroteFile(r, '/www/build/app.js')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/app.core.js')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/app.core.ssr.js')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/app.registry.json')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/cmp-a.js')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/es5-build-disabled.js')).toBe(true);
+    expect(wroteFile(r, '/www/index.html')).toBe(true);
   });
 
   it('should build one component w/ no styles', async () => {
@@ -30,12 +37,19 @@ describe('build', () => {
     const r = await c.build();
     expect(r.diagnostics).toEqual([]);
     expect(r.stats.components.length).toBe(1);
+    expect(r.stats.components.indexOf('cmp-a') > -1).toBe(true);
     expect(r.stats.transpileBuildCount).toBe(1);
     expect(r.stats.styleBuildCount).toBe(0);
     expect(r.stats.bundleBuildCount).toBe(1);
 
-    expect(wroteFile(r, 'cmp-a.js')).toBe(true);
-    expect(r.stats.components.indexOf('cmp-a') > -1).toBe(true);
+    expect(r.stats.filesWritten.length).toBe(7);
+    expect(wroteFile(r, '/www/build/app.js')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/app.core.js')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/app.core.ssr.js')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/app.registry.json')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/cmp-a.js')).toBe(true);
+    expect(wroteFile(r, '/www/build/app/es5-build-disabled.js')).toBe(true);
+    expect(wroteFile(r, '/www/index.html')).toBe(true);
   });
 
   it('should build no components', async () => {
@@ -59,9 +73,8 @@ describe('build', () => {
 
 
   function wroteFile(r: BuildResults, p: string) {
-    const filename = path.basename(p);
     return r.stats.filesWritten.some(f => {
-      return path.basename(f) === filename;
+      return normalizePath(f) === normalizePath(p);
     });
   }
 

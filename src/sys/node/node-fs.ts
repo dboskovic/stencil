@@ -6,9 +6,8 @@ import { normalizePath } from '../../compiler/util';
 // node/whatever crashes with memory issues
 // when using async/await. Whatever, promies it is
 export class NodeFileSystem implements InMemoryFileSystem {
-  private d: { [filePath: string]: FSItem; } = {};
+  private d: { [filePath: string]: FsItem; } = {};
   private ensuredDirs: string[] = [];
-  private writeTasks: WriteTask[] = [];
 
   constructor(public disk: FileSystem, private nodePath: any) {}
 
@@ -238,22 +237,16 @@ export class NodeFileSystem implements InMemoryFileSystem {
   async writeFile(filePath: string, content: string, inMemoryOnly = false) {
     filePath = normalizePath(filePath);
 
-    const f = this.d[filePath];
-    if (f && f.fileContent === content) {
-      return;
-    }
-
     const d = this.d[filePath] = this.d[filePath] || {};
     d.exists = true;
     d.isFile = true;
     d.isDirectory = false;
     d.fileContent = content;
 
-    if (inMemoryOnly !== true) {
-      this.writeTasks.push({
-        filePath: filePath,
-        writeContent: content
-      });
+    if (inMemoryOnly) {
+      d.queueWriteToDisk = false;
+    } else {
+      d.queueWriteToDisk = true;
     }
   }
 
@@ -270,6 +263,7 @@ export class NodeFileSystem implements InMemoryFileSystem {
     d.isFile = true;
     d.isDirectory = false;
     d.fileContent = content;
+    d.queueWriteToDisk = false;
 
     if (inMemoryOnly !== true) {
       this.ensureDirSync(this.nodePath.dirname(filePath));
@@ -278,30 +272,40 @@ export class NodeFileSystem implements InMemoryFileSystem {
   }
 
   async commit() {
+    const filesToWrite: { filePath: string, fileContent: string }[] = [];
     const dirs: string[] = [];
 
-    this.writeTasks.forEach(writeTask => {
-      const dir = this.nodePath.dirname(writeTask.filePath);
+    Object.keys(this.d).forEach(filePath => {
+      const fsItem = this.d[filePath];
+      const queueWriteToDisk = fsItem.queueWriteToDisk;
+      fsItem.queueWriteToDisk = false;
 
+      if (!queueWriteToDisk) {
+        return;
+      }
+
+      filesToWrite.push({
+        filePath: filePath,
+        fileContent: fsItem.fileContent
+      });
+
+      const dir = this.nodePath.dirname(filePath);
       if (dirs.indexOf(dir) === -1) {
         dirs.push(dir);
       }
     });
 
-    await Promise.all(dirs.map(dir => {
-      return this.ensureDir(dir);
-    }));
+    // ensure all the directories we need are created
+    await Promise.all(dirs.map(dir => this.ensureDir(dir)));
 
-    this.ensuredDirs.length = 0;
     const wroteFiles: string[] = [];
 
-    await Promise.all(this.writeTasks.map(writeTask => {
-      wroteFiles.push(writeTask.filePath);
-      return this.disk.writeFile(writeTask.filePath, writeTask.writeContent);
+    await Promise.all(filesToWrite.map(fileToWrite => {
+      wroteFiles.push(fileToWrite.filePath);
+      return this.disk.writeFile(fileToWrite.filePath, fileToWrite.fileContent);
     }));
 
-    this.writeTasks.length = 0;
-    return wroteFiles.sort();
+    return wroteFiles;
   }
 
   clearDirCache(dirPath: string) {
@@ -329,15 +333,10 @@ export class NodeFileSystem implements InMemoryFileSystem {
 }
 
 
-interface FSItem {
+interface FsItem {
   fileContent?: string;
   isFile?: boolean;
   isDirectory?: boolean;
   exists?: boolean;
-}
-
-
-interface WriteTask {
-  filePath?: string;
-  writeContent?: string;
+  queueWriteToDisk?: boolean;
 }

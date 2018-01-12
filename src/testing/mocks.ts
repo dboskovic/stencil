@@ -76,7 +76,8 @@ export function mockConfig() {
     logger: mockLogger(),
     rootDir: '/',
     suppressTypeScriptErrors: true,
-    devMode: true
+    devMode: true,
+    buildStats: true
   };
 
   return validateBuildConfig(config);
@@ -250,11 +251,8 @@ export function mockLogger() {
     error: noop,
     warn: noop,
     createTimeSpan: (_startMsg: string, _debug?: boolean) => {
-      const start = Date.now();
       return {
-        finish: () => {
-          return Date.now() - start;
-        }
+        finish: () => {}
       };
     },
     printDiagnostics: noop,

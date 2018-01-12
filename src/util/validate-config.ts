@@ -29,6 +29,10 @@ export function validateBuildConfig(config: Config, setEnvVariables?: boolean) {
     config.logLevel = config.logger.level;
   }
 
+  if (typeof config.buildStats !== 'boolean') {
+    config.buildStats = false;
+  }
+
   validateNamespace(config);
 
   const path = config.sys.path;

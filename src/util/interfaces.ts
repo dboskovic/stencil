@@ -307,6 +307,7 @@ export interface Config {
   logger?: Logger;
   rootDir?: string;
   logLevel?: 'error'|'warn'|'info'|'debug'|string;
+  buildStats?: boolean;
   buildEs5?: boolean;
   namespace?: string;
   fsNamespace?: string;
@@ -519,10 +520,10 @@ export interface BuildCtx {
 export interface BuildResults {
   buildId: number;
   diagnostics: Diagnostic[];
-  duration: number;
   hasError: boolean;
   aborted?: boolean;
   stats?: {
+    duration: number;
     isRebuild: boolean;
     filesWritten: string[];
     components: string[];

@@ -77,13 +77,13 @@ export function generateBuildResults(config: Config, buildCtx: BuildCtx) {
   const buildResults: BuildResults = {
     buildId: buildCtx.buildId,
     diagnostics: buildCtx.diagnostics,
-    duration: Date.now() - buildCtx.startTime,
     hasError: hasError(buildCtx.diagnostics),
     aborted: buildCtx.aborted
   };
 
-  // only bother adding the stats when in debug more (for testing mainly)
-  if (config.logLevel === 'debug') {
+  // only bother adding the buildStats config is enabled
+  // useful for testing/debugging
+  if (config.buildStats) {
     generateBuildResultsStats(buildCtx, buildResults);
   }
 
@@ -93,8 +93,9 @@ export function generateBuildResults(config: Config, buildCtx: BuildCtx) {
 
 function generateBuildResultsStats(buildCtx: BuildCtx, buildResults: BuildResults) {
   buildResults.stats = {
+    duration: Date.now() - buildCtx.startTime,
     isRebuild: buildCtx.isRebuild,
-    filesWritten: buildCtx.filesWritten,
+    filesWritten: buildCtx.filesWritten.sort(),
     components: buildCtx.components,
     transpileBuildCount: buildCtx.transpileBuildCount,
     bundleBuildCount: buildCtx.bundleBuildCount,

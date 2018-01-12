@@ -44,9 +44,9 @@ export function getTsHost(config: Config, ctx: CompilerCtx, tsCompilerOptions: t
 }
 
 
-function writeFileInMemory(config: Config, ctx: CompilerCtx, sourceFile: ts.SourceFile, outputFilePath: string, outputText: string) {
+function writeFileInMemory(config: Config, ctx: CompilerCtx, sourceFile: ts.SourceFile, distFilePath: string, outputText: string) {
   const tsFilePath = normalizePath(sourceFile.fileName);
-  outputFilePath = normalizePath(outputFilePath);
+  distFilePath = normalizePath(distFilePath);
 
   // if this build is also building a distribution then we
   // actually want to eventually write the files to disk
@@ -55,7 +55,11 @@ function writeFileInMemory(config: Config, ctx: CompilerCtx, sourceFile: ts.Sour
   const isInMemoryOnly = !config.generateDistribution;
 
   // let's write the beast to our internal in-memory file system
-  ctx.fs.writeFile(outputFilePath, outputText, isInMemoryOnly);
+  // the distFilePath is only written to disk when a distribution
+  // is being created. But if we're not generating a distribution
+  // like just a website, we still need to write it to our file system
+  // so it can be read later, but it only needs to be in memory
+  ctx.fs.writeFile(distFilePath, outputText, isInMemoryOnly);
 
   // get or create the ctx module file object
   if (!ctx.moduleFiles[tsFilePath]) {
@@ -64,16 +68,16 @@ function writeFileInMemory(config: Config, ctx: CompilerCtx, sourceFile: ts.Sour
   }
 
   // figure out which file type this is
-  if (isJsFile(outputFilePath)) {
+  if (isJsFile(distFilePath)) {
     // transpiled file is a js file
-    ctx.moduleFiles[tsFilePath].jsFilePath = outputFilePath;
+    ctx.moduleFiles[tsFilePath].jsFilePath = distFilePath;
 
-  } else if (isDtsFile(outputFilePath)) {
+  } else if (isDtsFile(distFilePath)) {
     // transpiled file is a .d.ts file
-    ctx.moduleFiles[tsFilePath].dtsFilePath = outputFilePath;
+    ctx.moduleFiles[tsFilePath].dtsFilePath = distFilePath;
 
   } else {
     // idk, this shouldn't happen
-    config.logger.debug(`unknown transpiled output: ${outputFilePath}`);
+    config.logger.debug(`unknown transpiled output: ${distFilePath}`);
   }
 }
