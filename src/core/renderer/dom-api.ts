@@ -18,6 +18,8 @@ export function createDomApi(win: any, doc: Document): DomApi {
 
     $body: doc.body,
 
+    $supportsEventOptions: false,
+
     $nodeType: (node: any) =>
       node.nodeType,
 
@@ -155,6 +157,9 @@ export function createDomApi(win: any, doc: Document): DomApi {
 
       // create the actual event listener options to use
       // this browser may not support event options
+      if (!domApi.$supportsEventOptions) {
+        throw new Error('error');
+      }
       eventListenerOpts = domApi.$supportsEventOptions ? {
         capture: !!useCapture,
         passive: !!usePassive
