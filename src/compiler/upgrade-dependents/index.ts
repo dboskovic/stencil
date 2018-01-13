@@ -55,7 +55,7 @@ function createDoUpgrade(config: Config, ctx: CompilerCtx, bundles: Bundle[]) {
       } catch (e) {
         config.logger.error(`error performing compiler upgrade on ${moduleFile.jsFilePath}: ${e}`);
       }
-      ctx.fs.writeFile(moduleFile.jsFilePath, output, true);
+      ctx.fs.writeFile(moduleFile.jsFilePath, output, { inMemoryOnly: true });
 
     }));
   };

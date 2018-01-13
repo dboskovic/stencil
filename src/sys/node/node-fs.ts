@@ -1,4 +1,4 @@
-import { InMemoryFileSystem, FileSystem } from '../../util/interfaces';
+import { InMemoryFileSystem, FileSystem, FileSystemWriteOptions } from '../../util/interfaces';
 import { normalizePath } from '../../compiler/util';
 
 
@@ -121,25 +121,27 @@ export class NodeFileSystem implements InMemoryFileSystem {
   }
 
   /**
-   * Returns true if it's already cached
-   * and false if it was not cached yet
+   * Returns true if the content has changed
+   * and it caches this read
    */
-  async isCachedReadFile(filePath: string) {
+  async isChangedFile(filePath: string) {
     filePath = normalizePath(filePath);
-    let f = this.d[filePath];
-    if (f && f.exists && typeof f.fileContent === 'string') {
-      return true;
-    }
 
     const fileContent = await this.disk.readFile(filePath, 'utf-8');
 
-    f = this.d[filePath] = this.d[filePath] || {};
+    let isChanged = true;
+
+    const f = this.d[filePath] = this.d[filePath] || {};
+    if (f.exists && f.fileContent === fileContent) {
+      isChanged = false;
+    }
+
     f.exists = true;
     f.isFile = true;
     f.isDirectory = false;
     f.fileContent = fileContent;
 
-    return false;
+    return isChanged;
   }
 
   async readdir(dirPath: string) {
@@ -234,38 +236,58 @@ export class NodeFileSystem implements InMemoryFileSystem {
     };
   }
 
-  async writeFile(filePath: string, content: string, inMemoryOnly = false) {
+  async writeFile(filePath: string, content: string, opts?: FileSystemWriteOptions) {
     filePath = normalizePath(filePath);
 
     const d = this.d[filePath] = this.d[filePath] || {};
     d.exists = true;
     d.isFile = true;
     d.isDirectory = false;
-    d.fileContent = content;
 
-    if (inMemoryOnly) {
-      d.queueWriteToDisk = false;
+    if (opts && opts.inMemoryOnly) {
+      // we don't want to actually write this to disk
+      // just keep it in memory
+      if (!d.queueWriteToDisk) {
+        // we only want this in memory and
+        // it wasn't already queued to be written
+        d.queueWriteToDisk = false;
+      }
+      d.fileContent = content;
+
     } else {
-      d.queueWriteToDisk = true;
+      // we want to write this to disk (eventually)
+      // but only if the content is different
+      // from our existing cached content
+      if (!d.queueWriteToDisk && d.fileContent !== content) {
+        // not already queued to be written
+        // and the content is different
+        d.queueWriteToDisk = true;
+      }
+      d.fileContent = content;
     }
   }
 
-  writeFileSync(filePath: string, content: string, inMemoryOnly = false) {
+  writeFileSync(filePath: string, content: string, opts?: FileSystemWriteOptions) {
     filePath = normalizePath(filePath);
 
-    const f = this.d[filePath];
-    if (f && f.fileContent === content) {
-      return;
+    if (opts && opts.clearFileCache) {
+      delete this.d[filePath];
+
+    } else {
+      const f = this.d[filePath];
+      if (f && f.fileContent === content) {
+        return;
+      }
+
+      const d = this.d[filePath] = this.d[filePath] || {};
+      d.exists = true;
+      d.isFile = true;
+      d.isDirectory = false;
+      d.fileContent = content;
+      d.queueWriteToDisk = false;
     }
 
-    const d = this.d[filePath] = this.d[filePath] || {};
-    d.exists = true;
-    d.isFile = true;
-    d.isDirectory = false;
-    d.fileContent = content;
-    d.queueWriteToDisk = false;
-
-    if (inMemoryOnly !== true) {
+    if (!opts || !opts.inMemoryOnly) {
       this.ensureDirSync(this.nodePath.dirname(filePath));
       this.disk.writeFileSync(filePath, content);
     }

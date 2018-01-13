@@ -1,9 +1,9 @@
 import addComponentMetadata from './transformers/add-component-metadata';
 import { Config, CompilerCtx, Diagnostic, ModuleFiles, TranspileResults, BuildCtx } from '../../util/interfaces';
-import { hasError, pathJoin, normalizePath } from '../util';
-import { COMPONENTS_DTS } from '../build/distribution';
+import { hasError, normalizePath } from '../util';
 import { gatherMetadata } from './datacollection/index';
 import { generateComponentTypesFile } from './create-component-types';
+import { getComponentsDtsSrcFilePath } from '../build/distribution';
 import { getTsHost } from './compiler-host';
 import { getUserTsConfig } from './compiler-options';
 import { loadTypeScriptDiagnostics } from '../../util/logger/logger-typescript';
@@ -97,8 +97,17 @@ export function transpileModules(config: Config, compilerCtx: CompilerCtx, build
   const tsHost = getTsHost(config, compilerCtx, tsOptions);
 
   // fire up the typescript program
-  const componentsDtsFilePath = pathJoin(config, config.srcDir, COMPONENTS_DTS);
-  const checkProgram = ts.createProgram(tsFilePaths.filter(filePath => filePath !== componentsDtsFilePath), tsOptions, tsHost);
+  const componentsDtsSrcFilePath = getComponentsDtsSrcFilePath(config);
+
+  // get all of the ts files paths to transpile
+  // ensure the components.d.ts file is always excluded from this transpile program
+  const checkProgramTsFiles = tsFilePaths.filter(filePath => filePath !== componentsDtsSrcFilePath);
+
+  // keep track of how many files we transpiled (great for debugging/testing)
+  buildCtx.transpileBuildCount = checkProgramTsFiles.length;
+
+  // run the first program that only does the checking
+  const checkProgram = ts.createProgram(checkProgramTsFiles, tsOptions, tsHost);
 
   // Gather component metadata and type info
   const metadata = gatherMetadata(config, checkProgram.getTypeChecker(), checkProgram.getSourceFiles());
@@ -119,18 +128,22 @@ export function transpileModules(config: Config, compilerCtx: CompilerCtx, build
 
   // Generate d.ts files for component types
   const componentTypesFileContent = generateComponentTypesFile(config, metadata);
-  compilerCtx.fs.writeFileSync(componentsDtsFilePath, componentTypesFileContent);
 
-  // create or reuse a module file file object
-  compilerCtx.moduleFiles[componentsDtsFilePath] = compilerCtx.moduleFiles[componentsDtsFilePath] || {};
+  // queue the components.d.ts async file write and put it into memory
+  compilerCtx.fs.writeFile(componentsDtsSrcFilePath, componentTypesFileContent);
 
-  // keep track of how many files we transpiled (great for debugging/testing)
-  buildCtx.transpileBuildCount = tsFilePaths.length;
+  // get all of the ts files paths to transpile
+  // ensure the components.d.ts file is always included to this transpile program
+  const programTsFiles = tsFilePaths.slice();
+  if (programTsFiles.indexOf(componentsDtsSrcFilePath) === -1) {
+    // we must always include the components.d.ts file in this tranpsile program
+    programTsFiles.push(componentsDtsSrcFilePath);
+  }
 
-  // create another program
-  const program = ts.createProgram(tsFilePaths, tsOptions, tsHost, checkProgram);
+  // create another program, but use the previous checkProgram to speed it up
+  const program = ts.createProgram(programTsFiles, tsOptions, tsHost, checkProgram);
 
-  // run the program again with our new typed info
+  // run the second program again with our new typed info
   transpileProgram(program, tsHost, config, compilerCtx, buildCtx);
 
   // done and done

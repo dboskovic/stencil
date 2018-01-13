@@ -392,38 +392,63 @@ describe('rebuild', () => {
   //   });
   // });
 
-  fit('should not resave unchanged content', async () => {
+  fit('should rebuild transpile for changed typescript file', async () => {
     c.config.bundles = [ { components: ['cmp-a'] } ];
     c.config.watch = true;
-    c.fs.writeFileSync('/src/cmp-a.tsx', `@Component({ tag: 'cmp-a', styleUrl: 'cmp-a.scss' }) export class CmpA {}`);
-    c.fs.writeFileSync('/src/cmp-a.scss', `body { color: red; }`);
+    c.fs.writeFileSync('/src/cmp-a.tsx', `@Component({ tag: 'cmp-a' }) export class CmpA {}`, { clearFileCache: true });
 
-    // kick off the build, wait for it to finish
-    const initialBuildResults = await c.build();
-
-    // initial build finished
-    expect(initialBuildResults.diagnostics).toEqual([]);
-    expect(initialBuildResults.buildId).toBe(0);
-    expect(initialBuildResults.stats.isRebuild).toBe(false);
+    // kick off the initial build, wait for it to finish
+    const initialBuild = await c.build();
+    expect(initialBuild.diagnostics).toEqual([]);
 
     // create a rebuild listener
     const rebuildListener = c.once('rebuild');
+
+    // write an actual change
+    c.fs.writeFileSync('/src/cmp-a.tsx', `@Component({ tag: 'cmp-a' }) export class CmpA { constructor() { console.log('changed!!'); } }`, { clearFileCache: true });
 
     // kick off a rebuild
     c.trigger('fileUpdate', '/src/cmp-a.tsx');
 
     // wait for the rebuild to finish
     // get the rebuild results
-    const rebuildResults = await rebuildListener;
+    const rebuild = await rebuildListener;
+    expect(rebuild.diagnostics).toEqual([]);
 
-    expect(rebuildResults.diagnostics).toEqual([]);
-    expect(rebuildResults.buildId).toBe(1);
-    expect(rebuildResults.stats.isRebuild).toBe(true);
-    expect(rebuildResults.stats.transpileBuildCount).toBe(2);
-    expect(rebuildResults.stats.bundleBuildCount).toBe(1);
-    expect(rebuildResults.stats.styleBuildCount).toBe(1);
+    expect(rebuild.stats.transpileBuildCount).toBe(1);
+    expect(wroteFile(rebuild, '/www/build/app/cmp-a.js')).toBe(true);
+  });
 
-    expect(wroteFile(rebuildResults, '/www/build/app/cmp-a.js')).toBe(true);
+  it('should not rebuild transpile for unchanged typescript file', async () => {
+    c.config.bundles = [ { components: ['cmp-a'] } ];
+    c.config.watch = true;
+    c.fs.writeFileSync('/src/cmp-a.tsx', `@Component({ tag: 'cmp-a' }) export class CmpA {}`, { clearFileCache: true });
+
+    // kick off the build, wait for it to finish
+    const initialBuild = await c.build();
+
+    // initial build finished
+    expect(initialBuild.diagnostics).toEqual([]);
+    expect(initialBuild.buildId).toBe(0);
+    expect(initialBuild.stats.isRebuild).toBe(false);
+
+    // create a rebuild listener
+    const rebuildListener = c.once('rebuild');
+
+    // write the same darn thing, no actual change
+    c.fs.writeFileSync('/src/cmp-a.tsx', `@Component({ tag: 'cmp-a' }) export class CmpA {}`, { clearFileCache: true });
+
+    // kick off a rebuild
+    c.trigger('fileUpdate', '/src/cmp-a.tsx');
+
+    // wait for the rebuild to finish
+    // get the rebuild results
+    const rebuild = await rebuildListener;
+
+    expect(rebuild.diagnostics).toEqual([]);
+    expect(rebuild.buildId).toBe(1);
+    expect(rebuild.stats.isRebuild).toBe(true);
+    expect(rebuild.stats.transpileBuildCount).toBe(0);
   });
 
 

@@ -1235,7 +1235,7 @@ export interface InMemoryFileSystem extends FileSystem {
   clearDirCache(dirPath: string): void;
   clearFileCache(filePath: string): void;
   disk: FileSystem;
-  isCachedReadFile(filePath: string): Promise<boolean>;
+  isChangedFile(filePath: string): Promise<boolean>;
 }
 
 
@@ -1252,8 +1252,14 @@ export interface FileSystem {
   readFileSync(filePath: string, encoding?: string): string;
   stat(path: string): Promise<{ isFile: () => boolean; isDirectory: () => boolean; }>;
   statSync(path: string): { isFile: () => boolean; isDirectory: () => boolean; };
-  writeFile(filePath: string, content: string, isInMemoryOnly?: boolean): Promise<void>;
-  writeFileSync(filePath: string, content: string): void;
+  writeFile(filePath: string, content: string, opts?: FileSystemWriteOptions): Promise<void>;
+  writeFileSync(filePath: string, content: string, opts?: FileSystemWriteOptions): void;
+}
+
+
+export interface FileSystemWriteOptions {
+  inMemoryOnly?: boolean;
+  clearFileCache?: boolean;
 }
 
 

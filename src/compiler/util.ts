@@ -81,6 +81,9 @@ export function isHtmlFile(filePath: string) {
 
 export function isWebDevFile(filePath: string) {
   const ext = filePath.split('.').pop().toLowerCase();
+  if (WEB_DEV_EXT.indexOf(ext) > -1) {
+    return true;
+  }
   return (WEB_DEV_EXT.indexOf(ext) > -1 || isTsFile(filePath));
 }
 const WEB_DEV_EXT = ['js', 'jsx', 'html', 'htm', 'css', 'scss', 'sass'];

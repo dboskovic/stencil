@@ -59,7 +59,7 @@ function writeFileInMemory(config: Config, ctx: CompilerCtx, sourceFile: ts.Sour
   // is being created. But if we're not generating a distribution
   // like just a website, we still need to write it to our file system
   // so it can be read later, but it only needs to be in memory
-  ctx.fs.writeFile(distFilePath, outputText, isInMemoryOnly);
+  ctx.fs.writeFile(distFilePath, outputText, { inMemoryOnly: isInMemoryOnly });
 
   // get or create the ctx module file object
   if (!ctx.moduleFiles[tsFilePath]) {

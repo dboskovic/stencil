@@ -122,30 +122,30 @@ function copySourceCollectionComponentsToDistribution(config: Config, buildCtx: 
 
 
 async function generateTypes(config: Config, ctx: CompilerCtx) {
-  const PromiseList: Promise<any>[] = [];
 
   // If index.d.ts file exists at the root then copy it.
   try {
-    let indexDtsContent = await ctx.fs.readFile(config.sys.path.join(config.srcDir, 'index.d.ts'));
-    if (typeof indexDtsContent === 'string') {
-      indexDtsContent = indexDtsContent.trim();
-      if (indexDtsContent.length) {
-        // don't bother copying this file if there is no content
-        PromiseList.push(ctx.fs.copy(
-          config.sys.path.join(config.srcDir, 'index.d.ts'),
-          config.sys.path.join(config.typesDir, 'index.d.ts')
-        ));
-      }
-    }
+    const indexDtsSrcFilePath = pathJoin(config, config.srcDir, 'index.d.ts');
+    const indexDtsDistTypesFilePath = pathJoin(config, config.typesDir, 'index.d.ts');
+    const indexDtsSrcContent = await ctx.fs.readFile(indexDtsSrcFilePath);
+    await ctx.fs.writeFile(indexDtsDistTypesFilePath, indexDtsSrcContent);
   } catch (e) {}
 
-  // copy the generated components.d.ts fiel
-  PromiseList.push(ctx.fs.copy(
-    config.sys.path.join(config.srcDir, COMPONENTS_DTS),
-    config.sys.path.join(config.typesDir, COMPONENTS_DTS)
-  ));
+  // copy the generated components.d.ts file
+  try {
+    const componentsDtsSrcContent = await ctx.fs.readFile(getComponentsDtsSrcFilePath(config));
+    await ctx.fs.writeFile(getComponentsDtsDistTypesFilePath(config), componentsDtsSrcContent);
+  } catch (e) {}
+}
 
-  return Promise.all(PromiseList);
+
+export function getComponentsDtsSrcFilePath(config: Config) {
+  return pathJoin(config, config.srcDir, COMPONENTS_DTS);
+}
+
+
+export function getComponentsDtsDistTypesFilePath(config: Config) {
+  return pathJoin(config, config.typesDir, COMPONENTS_DTS);
 }
 
 
